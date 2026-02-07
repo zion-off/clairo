@@ -2,6 +2,10 @@
   "name": "clairo",
   "version": "0.2.0",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zion-off/clairo.git"
+  },
   "bin": "dist/cli.js",
   "type": "module",
   "engines": {
