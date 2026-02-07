@@ -1,7 +1,6 @@
-import { useRef } from 'react';
 import open from 'open';
-import { TitledBox } from '@mishieck/ink-titled-box';
-import { Box, Text, useInput } from 'ink';
+import { useRef } from 'react';
+import { Box, Text, useInput, useStdout } from 'ink';
 import { ScrollView, ScrollViewRef } from 'ink-scroll-view';
 import { PRDetails, StatusCheck } from '../../lib/github/index.js';
 import Markdown from '../ui/Markdown.js';
@@ -82,87 +81,116 @@ export default function PRDetailsBox({ pr, loading, error, isFocused }: Props) {
     { isActive: isFocused }
   );
 
+  // Get terminal width for responsive border
+  const { stdout } = useStdout();
+  const terminalWidth = stdout?.columns ?? 80;
+  // Calculate width: this component takes ~half the terminal (left column)
+  const columnWidth = Math.floor(terminalWidth / 2);
+  const titlePart = `╭─ ${displayTitle} `;
+  const dashCount = Math.max(0, columnWidth - titlePart.length - 1);
+  const topBorder = `${titlePart}${'─'.repeat(dashCount)}╮`;
+
   return (
-    <TitledBox borderStyle="round" titles={[displayTitle]} borderColor={borderColor} flexGrow={1}>
-      <Box flexDirection="column" flexGrow={1}>
+    <Box flexDirection="column" flexGrow={1}>
+      <Text color={borderColor}>{topBorder}</Text>
+      <Box
+        flexDirection="column"
+        flexGrow={1}
+        flexBasis={0}
+        overflow="hidden"
+        borderStyle="round"
+        borderTop={false}
+        borderColor={borderColor}
+      >
         <ScrollView ref={scrollRef}>
           <Box flexDirection="column" paddingX={1}>
-          {loading && <Text dimColor>Loading details...</Text>}
-          {error && <Text color="red">{error}</Text>}
-          {!loading && !error && !pr && <Text dimColor>Select a PR to view details</Text>}
-          {!loading && !error && pr && (
-            <>
-              <Text bold>{pr.title}</Text>
-              <Text dimColor>
-                by {pr.author?.login ?? 'unknown'} | {pr.commits?.length ?? 0} commits
-              </Text>
+            {loading && <Text dimColor>Loading details...</Text>}
+            {error && <Text color="red">{error}</Text>}
+            {!loading && !error && !pr && <Text dimColor>Select a PR to view details</Text>}
+            {!loading && !error && pr && (
+              <>
+                <Text bold>{pr.title}</Text>
+                <Text dimColor>
+                  by {pr.author?.login ?? 'unknown'} | {pr.commits?.length ?? 0} commits
+                </Text>
 
-              <Box marginTop={1}>
-                <Text dimColor>Review: </Text>
-                <Text color={reviewColor}>{reviewStatus}</Text>
-                <Text> | </Text>
-                <Text dimColor>Status: </Text>
-                <Text color={mergeDisplay.color}>{mergeDisplay.text}</Text>
-              </Box>
-
-              {(pr.assignees?.length ?? 0) > 0 && (
                 <Box marginTop={1}>
-                  <Text dimColor>Assignees: </Text>
-                  <Text>{pr.assignees.map((a) => a.login).join(', ')}</Text>
+                  <Text dimColor>Review: </Text>
+                  <Text color={reviewColor}>{reviewStatus}</Text>
+                  <Text> | </Text>
+                  <Text dimColor>Status: </Text>
+                  <Text color={mergeDisplay.color}>{mergeDisplay.text}</Text>
                 </Box>
-              )}
 
-              {(pr.reviews?.length ?? 0) > 0 && (
-                <Box flexDirection="column">
-                  <Text dimColor>Reviews:</Text>
-                  {pr.reviews.map((review, idx) => {
-                    const color = review.state === 'APPROVED' ? 'green'
-                      : review.state === 'CHANGES_REQUESTED' ? 'red'
-                      : review.state === 'COMMENTED' ? 'blue'
-                      : 'yellow';
-                    const icon = review.state === 'APPROVED' ? '✓'
-                      : review.state === 'CHANGES_REQUESTED' ? '✗'
-                      : review.state === 'COMMENTED' ? '💬'
-                      : '○';
-                    return (
-                      <Text key={idx} color={color}>
-                        {'  '}{icon} {review.author.login}
-                      </Text>
-                    );
-                  })}
-                </Box>
-              )}
+                {(pr.assignees?.length ?? 0) > 0 && (
+                  <Box marginTop={1}>
+                    <Text dimColor>Assignees: </Text>
+                    <Text>{pr.assignees.map((a) => a.login).join(', ')}</Text>
+                  </Box>
+                )}
 
-              {(pr.reviewRequests?.length ?? 0) > 0 && (
-                <Box>
-                  <Text dimColor>Pending: </Text>
-                  <Text color="yellow">{pr.reviewRequests.map((r) => r.login ?? r.name ?? r.slug ?? 'Team').join(', ')}</Text>
-                </Box>
-              )}
+                {(pr.reviews?.length ?? 0) > 0 && (
+                  <Box flexDirection="column">
+                    <Text dimColor>Reviews:</Text>
+                    {pr.reviews.map((review, idx) => {
+                      const color =
+                        review.state === 'APPROVED'
+                          ? 'green'
+                          : review.state === 'CHANGES_REQUESTED'
+                          ? 'red'
+                          : review.state === 'COMMENTED'
+                          ? 'blue'
+                          : 'yellow';
+                      const icon =
+                        review.state === 'APPROVED'
+                          ? '✓'
+                          : review.state === 'CHANGES_REQUESTED'
+                          ? '✗'
+                          : review.state === 'COMMENTED'
+                          ? '💬'
+                          : '○';
+                      return (
+                        <Text key={idx} color={color}>
+                          {'  '}
+                          {icon} {review.author.login}
+                        </Text>
+                      );
+                    })}
+                  </Box>
+                )}
 
-              {(pr.statusCheckRollup?.length ?? 0) > 0 && (
-                <Box marginTop={1} flexDirection="column">
-                  <Text dimColor>Checks:</Text>
-                  {pr.statusCheckRollup?.map((check, idx) => (
-                    <Text key={idx} color={getCheckColor(check)}>
-                      {'  '}
-                      {getCheckIcon(check)} {check.name ?? check.context}
+                {(pr.reviewRequests?.length ?? 0) > 0 && (
+                  <Box>
+                    <Text dimColor>Pending: </Text>
+                    <Text color="yellow">
+                      {pr.reviewRequests.map((r) => r.login ?? r.name ?? r.slug ?? 'Team').join(', ')}
                     </Text>
-                  ))}
-                </Box>
-              )}
+                  </Box>
+                )}
 
-              {pr.body && (
-                <Box marginTop={1} flexDirection="column">
-                  <Text dimColor>Description:</Text>
-                  <Markdown>{pr.body}</Markdown>
-                </Box>
-              )}
-            </>
-          )}
+                {(pr.statusCheckRollup?.length ?? 0) > 0 && (
+                  <Box marginTop={1} flexDirection="column">
+                    <Text dimColor>Checks:</Text>
+                    {pr.statusCheckRollup?.map((check, idx) => (
+                      <Text key={idx} color={getCheckColor(check)}>
+                        {'  '}
+                        {getCheckIcon(check)} {check.name ?? check.context}
+                      </Text>
+                    ))}
+                  </Box>
+                )}
+
+                {pr.body && (
+                  <Box marginTop={1} flexDirection="column">
+                    <Text dimColor>Description:</Text>
+                    <Markdown>{pr.body}</Markdown>
+                  </Box>
+                )}
+              </>
+            )}
           </Box>
         </ScrollView>
       </Box>
-    </TitledBox>
+    </Box>
   );
 }
