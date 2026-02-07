@@ -191,18 +191,40 @@ export default function GitHubView({ isFocused, onKeybindingsChange, onLogUpdate
 
   // Track PR numbers before creating a new PR
   const prNumbersBeforeCreate = useRef<Set<number>>(new Set());
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleCreatePR = useCallback(async () => {
+  const handleCreatePR = useCallback(() => {
     // Store current PR numbers before opening browser
     prNumbersBeforeCreate.current = new Set(prs.map((pr) => pr.number));
 
     // Open GitHub PR creation page in browser using gh CLI
-    exec('gh pr create --web', async () => {
+    exec('gh pr create --web', () => {
       // Emit resize to refresh TUI after returning from browser
       process.stdout.emit('resize');
+    });
 
-      // Poll for new PRs to detect if one was created
-      if (!currentBranch || !currentRepoSlug) return;
+    // Start polling for new PRs (every 3 seconds, up to 2 minutes)
+    if (!currentBranch || !currentRepoSlug) return;
+
+    let attempts = 0;
+    const maxAttempts = 24; // 24 * 5 seconds = 2 minutes
+    const pollInterval = 5000;
+
+    // Clear any existing polling
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+    }
+
+    pollingIntervalRef.current = setInterval(async () => {
+      attempts++;
+
+      if (attempts > maxAttempts) {
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
+        }
+        return;
+      }
 
       const result = await listPRsForBranch(currentBranch, currentRepoSlug);
       if (result.success) {
@@ -211,6 +233,12 @@ export default function GitHubView({ isFocused, onKeybindingsChange, onLogUpdate
         // Find newly created PR
         const newPR = result.data.find((pr) => !prNumbersBeforeCreate.current.has(pr.number));
         if (newPR) {
+          // Stop polling - we found the new PR
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+            pollingIntervalRef.current = null;
+          }
+
           // Get linked Jira tickets for logging
           const tickets = repoPath && currentBranch
             ? getLinkedTickets(repoPath, currentBranch).map((t) => t.key)
@@ -221,8 +249,17 @@ export default function GitHubView({ isFocused, onKeybindingsChange, onLogUpdate
           setSelectedPR(newPR);
         }
       }
-    });
+    }, pollInterval);
   }, [prs, currentBranch, currentRepoSlug, repoPath, onLogUpdated]);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, []);
 
   useInput(
     (input) => {
