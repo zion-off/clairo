@@ -34,13 +34,16 @@ export function getTodayDate(): string {
 }
 
 /**
- * Get current time in HH:MM format
+ * Get current date and time in YYYY-MM-DD HH:MM format
  */
 export function formatTimestamp(): string {
   const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
   const hours = String(now.getHours()).padStart(2, '0');
   const minutes = String(now.getMinutes()).padStart(2, '0');
-  return `${hours}:${minutes}`;
+  return `${year}-${month}-${day} ${hours}:${minutes}`;
 }
 
 /**
@@ -143,6 +146,10 @@ export function openLogInEditor(date: string): boolean {
   if (!existsSync(filePath)) {
     return false;
   }
+
+  // Append timestamp before opening editor
+  const timestamp = formatTimestamp();
+  appendFileSync(filePath, `\n## ${timestamp}\n\n`);
 
   const editor = process.env.VISUAL || process.env.EDITOR || 'vi';
 
