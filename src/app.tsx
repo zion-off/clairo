@@ -1,16 +1,22 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Box, useApp, useInput } from 'ink';
 import GitHubView from './components/github/GitHubView.js';
 import { JiraView } from './components/jira/index.js';
+import { LogsView } from './components/logs/index.js';
 import KeybindingsBar, { Keybinding } from './components/ui/KeybindingsBar.js';
 
-type FocusedView = 'github' | 'jira';
+type FocusedView = 'github' | 'jira' | 'logs';
 
 export default function App() {
   const { exit } = useApp();
   const [focusedView, setFocusedView] = useState<FocusedView>('github');
   const [modalOpen, setModalOpen] = useState(false);
   const [contextBindings, setContextBindings] = useState<Keybinding[]>([]);
+  const [logRefreshKey, setLogRefreshKey] = useState(0);
+
+  const handleLogUpdated = useCallback(() => {
+    setLogRefreshKey((prev) => prev + 1);
+  }, []);
 
   useInput(
     (input, key) => {
@@ -23,21 +29,37 @@ export default function App() {
       if (input === '4') {
         setFocusedView('jira');
       }
+      if (input === '5' || input === '6') {
+        setFocusedView('logs');
+      }
     },
     { isActive: !modalOpen }
   );
 
   return (
     <Box flexGrow={1} flexDirection="column" overflow="hidden">
-      <GitHubView
-        isFocused={focusedView === 'github'}
-        onKeybindingsChange={focusedView === 'github' ? setContextBindings : undefined}
-      />
-      <JiraView
-        isFocused={focusedView === 'jira'}
-        onModalChange={setModalOpen}
-        onKeybindingsChange={focusedView === 'jira' ? setContextBindings : undefined}
-      />
+      <Box flexGrow={1} flexDirection="row" columnGap={1}>
+        <Box flexDirection="column" flexGrow={1} flexBasis={0}>
+          <GitHubView
+            isFocused={focusedView === 'github'}
+            onKeybindingsChange={focusedView === 'github' ? setContextBindings : undefined}
+            onLogUpdated={handleLogUpdated}
+          />
+          <JiraView
+            isFocused={focusedView === 'jira'}
+            onModalChange={setModalOpen}
+            onKeybindingsChange={focusedView === 'jira' ? setContextBindings : undefined}
+            onLogUpdated={handleLogUpdated}
+          />
+        </Box>
+        <Box flexDirection="column" flexGrow={1} flexBasis={0}>
+          <LogsView
+            isFocused={focusedView === 'logs'}
+            onKeybindingsChange={focusedView === 'logs' ? setContextBindings : undefined}
+            refreshKey={logRefreshKey}
+          />
+        </Box>
+      </Box>
       <KeybindingsBar contextBindings={contextBindings} modalOpen={modalOpen} />
     </Box>
   );

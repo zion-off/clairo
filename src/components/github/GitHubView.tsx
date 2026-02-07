@@ -1,10 +1,12 @@
 import { exec } from 'child_process';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { TitledBox } from '@mishieck/ink-titled-box';
 import { Box, Text, useInput } from 'ink';
 import { getSelectedRemote, updateRepoConfig } from '../../lib/github/config.js';
 import { GitRemote, getCurrentBranch, getRepoRoot, isGitRepo, listRemotes } from '../../lib/github/git.js';
 import { PRDetails, PRListItem, getPRDetails, getRepoFromRemote, listPRsForBranch } from '../../lib/github/index.js';
+import { getLinkedTickets } from '../../lib/jira/index.js';
+import { logPRCreated } from '../../lib/logs/logger.js';
 import { Keybinding } from '../ui/KeybindingsBar.js';
 import PRDetailsBox from './PRDetailsBox.js';
 import PullRequestsBox from './PullRequestsBox.js';
@@ -15,9 +17,10 @@ type FocusedBox = 'remotes' | 'prs' | 'details';
 type Props = {
   isFocused: boolean;
   onKeybindingsChange?: (bindings: Keybinding[]) => void;
+  onLogUpdated?: () => void;
 };
 
-export default function GitHubView({ isFocused, onKeybindingsChange }: Props) {
+export default function GitHubView({ isFocused, onKeybindingsChange, onLogUpdated }: Props) {
   const [isRepo, setIsRepo] = useState<boolean | null>(null);
   const [repoPath, setRepoPath] = useState<string | null>(null);
   const [remotes, setRemotes] = useState<GitRemote[]>([]);
@@ -186,13 +189,40 @@ export default function GitHubView({ isFocused, onKeybindingsChange }: Props) {
     setSelectedPR(pr);
   }, []);
 
-  const handleCreatePR = useCallback(() => {
+  // Track PR numbers before creating a new PR
+  const prNumbersBeforeCreate = useRef<Set<number>>(new Set());
+
+  const handleCreatePR = useCallback(async () => {
+    // Store current PR numbers before opening browser
+    prNumbersBeforeCreate.current = new Set(prs.map((pr) => pr.number));
+
     // Open GitHub PR creation page in browser using gh CLI
-    exec('gh pr create --web', () => {
+    exec('gh pr create --web', async () => {
       // Emit resize to refresh TUI after returning from browser
       process.stdout.emit('resize');
+
+      // Poll for new PRs to detect if one was created
+      if (!currentBranch || !currentRepoSlug) return;
+
+      const result = await listPRsForBranch(currentBranch, currentRepoSlug);
+      if (result.success) {
+        setPrs(result.data);
+
+        // Find newly created PR
+        const newPR = result.data.find((pr) => !prNumbersBeforeCreate.current.has(pr.number));
+        if (newPR) {
+          // Get linked Jira tickets for logging
+          const tickets = repoPath && currentBranch
+            ? getLinkedTickets(repoPath, currentBranch).map((t) => t.key)
+            : [];
+
+          logPRCreated(newPR.number, newPR.title, tickets);
+          onLogUpdated?.();
+          setSelectedPR(newPR);
+        }
+      }
     });
-  }, []);
+  }, [prs, currentBranch, currentRepoSlug, repoPath, onLogUpdated]);
 
   useInput(
     (input) => {

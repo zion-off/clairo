@@ -21,6 +21,7 @@ import {
   updateTicketStatus,
   validateCredentials,
 } from '../../lib/jira/index.js';
+import { logJiraStatusChanged } from '../../lib/logs/logger.js';
 import { Keybinding } from '../ui/KeybindingsBar.js';
 import ChangeStatusModal from './ChangeStatusModal.js';
 import ConfigureJiraSiteModal from './ConfigureJiraSiteModal.js';
@@ -33,9 +34,10 @@ type Props = {
   isFocused: boolean;
   onModalChange?: (isOpen: boolean) => void;
   onKeybindingsChange?: (bindings: Keybinding[]) => void;
+  onLogUpdated?: () => void;
 };
 
-export default function JiraView({ isFocused, onModalChange, onKeybindingsChange }: Props) {
+export default function JiraView({ isFocused, onModalChange, onKeybindingsChange, onLogUpdated }: Props) {
   const [repoPath, setRepoPath] = useState<string | null>(null);
   const [currentBranch, setCurrentBranch] = useState<string | null>(null);
   const [isRepo, setIsRepo] = useState<boolean | null>(null);
@@ -354,7 +356,10 @@ export default function JiraView({ isFocused, onModalChange, onKeybindingsChange
           ticketKey={ticket.key}
           currentStatus={ticket.status}
           onComplete={(newStatus) => {
+            const oldStatus = ticket.status;
             updateTicketStatus(repoPath, currentBranch, ticket.key, newStatus);
+            logJiraStatusChanged(ticket.key, oldStatus, newStatus);
+            onLogUpdated?.();
             setShowStatusModal(false);
             refreshTickets();
           }}
