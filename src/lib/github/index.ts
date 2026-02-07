@@ -1,0 +1,287 @@
+import { exec } from 'child_process';
+import { existsSync, readFileSync } from 'fs';
+import { join } from 'path';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
+
+export type GitHubResult<T> =
+  | { success: true; data: T }
+  | {
+      success: false;
+      error: string;
+      errorType: 'not_installed' | 'not_authenticated' | 'api_error';
+    };
+
+export type PRListItem = {
+  number: number;
+  title: string;
+  state: 'OPEN' | 'CLOSED' | 'MERGED';
+  author: { login: string };
+  createdAt: string;
+  isDraft: boolean;
+};
+
+export type StatusCheck = {
+  __typename: string;
+  name?: string;
+  context?: string;
+  status?: string;
+  conclusion?: string;
+  state?: string;
+};
+
+export type PRDetails = {
+  number: number;
+  title: string;
+  body: string;
+  state: 'OPEN' | 'CLOSED' | 'MERGED';
+  author: { login: string };
+  createdAt: string;
+  updatedAt: string;
+  isDraft: boolean;
+  mergeable: 'MERGEABLE' | 'CONFLICTING' | 'UNKNOWN';
+  reviewDecision: 'APPROVED' | 'CHANGES_REQUESTED' | 'REVIEW_REQUIRED' | null;
+  commits: Array<{ oid: string; messageHeadline: string }>;
+  assignees: Array<{ login: string }>;
+  reviewRequests: Array<{ login?: string; name?: string; slug?: string }>;
+  reviews: Array<{ author: { login: string }; state: string }>;
+  statusCheckRollup: StatusCheck[] | null;
+};
+
+/**
+ * Check if gh CLI is installed
+ */
+export async function isGhInstalled(): Promise<boolean> {
+  try {
+    await execAsync('gh --version');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Check if gh CLI is authenticated
+ */
+export async function isGhAuthenticated(): Promise<boolean> {
+  try {
+    await execAsync('gh auth status');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Parse a remote URL to extract owner/repo format
+ */
+export function getRepoFromRemote(remoteUrl: string): string | null {
+  // Handle SSH: git@github.com:owner/repo.git
+  const sshMatch = remoteUrl.match(/git@github\.com:(.+?)(?:\.git)?$/);
+  if (sshMatch) return sshMatch[1].replace(/\.git$/, '');
+
+  // Handle HTTPS: https://github.com/owner/repo.git
+  const httpsMatch = remoteUrl.match(
+    /https:\/\/github\.com\/(.+?)(?:\.git)?$/
+  );
+  if (httpsMatch) return httpsMatch[1].replace(/\.git$/, '');
+
+  return null;
+}
+
+/**
+ * List PRs for a specific branch
+ */
+export async function listPRsForBranch(
+  branch: string,
+  repo: string
+): Promise<GitHubResult<PRListItem[]>> {
+  if (!(await isGhInstalled())) {
+    return {
+      success: false,
+      error: 'GitHub CLI (gh) is not installed. Install from https://cli.github.com',
+      errorType: 'not_installed',
+    };
+  }
+  if (!(await isGhAuthenticated())) {
+    return {
+      success: false,
+      error: "Not authenticated. Run 'gh auth login' to authenticate.",
+      errorType: 'not_authenticated',
+    };
+  }
+
+  try {
+    const fields = 'number,title,state,author,createdAt,isDraft';
+    const { stdout } = await execAsync(
+      `gh pr list --head "${branch}" --json ${fields} --repo "${repo}"`
+    );
+    const prs = JSON.parse(stdout) as PRListItem[];
+    return { success: true, data: prs };
+  } catch {
+    return { success: false, error: 'Failed to fetch PRs', errorType: 'api_error' };
+  }
+}
+
+/**
+ * Get detailed PR information
+ */
+export async function getPRDetails(
+  prNumber: number,
+  repo: string
+): Promise<GitHubResult<PRDetails>> {
+  if (!(await isGhInstalled())) {
+    return {
+      success: false,
+      error: 'GitHub CLI (gh) is not installed',
+      errorType: 'not_installed',
+    };
+  }
+  if (!(await isGhAuthenticated())) {
+    return {
+      success: false,
+      error: "Not authenticated. Run 'gh auth login'",
+      errorType: 'not_authenticated',
+    };
+  }
+
+  try {
+    const fields = [
+      'number',
+      'title',
+      'body',
+      'state',
+      'author',
+      'createdAt',
+      'updatedAt',
+      'isDraft',
+      'mergeable',
+      'reviewDecision',
+      'commits',
+      'assignees',
+      'reviewRequests',
+      'reviews',
+      'statusCheckRollup',
+    ].join(',');
+
+    const { stdout } = await execAsync(
+      `gh pr view ${prNumber} --json ${fields} --repo "${repo}"`
+    );
+    const pr = JSON.parse(stdout) as PRDetails;
+    return { success: true, data: pr };
+  } catch {
+    return {
+      success: false,
+      error: 'Failed to fetch PR details',
+      errorType: 'api_error',
+    };
+  }
+}
+
+/**
+ * Find PR template in repo (checks common locations)
+ */
+export function getPRTemplate(repoPath: string): string | null {
+  const templatePaths = [
+    '.github/PULL_REQUEST_TEMPLATE.md',
+    '.github/pull_request_template.md',
+    'PULL_REQUEST_TEMPLATE.md',
+    'pull_request_template.md',
+    'docs/PULL_REQUEST_TEMPLATE.md',
+  ];
+
+  for (const templatePath of templatePaths) {
+    const fullPath = join(repoPath, templatePath);
+    if (existsSync(fullPath)) {
+      try {
+        return readFileSync(fullPath, 'utf-8');
+      } catch {
+        continue;
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Get the default branch for a repo
+ */
+export async function getDefaultBranch(repo: string): Promise<GitHubResult<string>> {
+  if (!(await isGhInstalled())) {
+    return {
+      success: false,
+      error: 'GitHub CLI (gh) is not installed',
+      errorType: 'not_installed',
+    };
+  }
+  if (!(await isGhAuthenticated())) {
+    return {
+      success: false,
+      error: "Not authenticated. Run 'gh auth login'",
+      errorType: 'not_authenticated',
+    };
+  }
+
+  try {
+    const { stdout } = await execAsync(
+      `gh repo view "${repo}" --json defaultBranchRef --jq '.defaultBranchRef.name'`
+    );
+    return { success: true, data: stdout.trim() };
+  } catch {
+    return {
+      success: false,
+      error: 'Failed to get default branch',
+      errorType: 'api_error',
+    };
+  }
+}
+
+/**
+ * Create a PR using gh CLI
+ */
+export async function createPR(
+  repo: string,
+  title: string,
+  body: string,
+  baseBranch?: string
+): Promise<GitHubResult<PRListItem>> {
+  if (!(await isGhInstalled())) {
+    return {
+      success: false,
+      error: 'GitHub CLI (gh) is not installed',
+      errorType: 'not_installed',
+    };
+  }
+  if (!(await isGhAuthenticated())) {
+    return {
+      success: false,
+      error: "Not authenticated. Run 'gh auth login'",
+      errorType: 'not_authenticated',
+    };
+  }
+
+  try {
+    const baseArg = baseBranch ? `--base "${baseBranch}"` : '';
+    const fields = 'number,title,state,author,createdAt,isDraft';
+
+    // Escape title and body for shell
+    const escapedTitle = title.replace(/"/g, '\\"');
+    const escapedBody = body.replace(/"/g, '\\"');
+
+    const { stdout } = await execAsync(
+      `gh pr create --title "${escapedTitle}" --body "${escapedBody}" ${baseArg} --repo "${repo}" --json ${fields}`
+    );
+
+    const pr = JSON.parse(stdout) as PRListItem;
+    return { success: true, data: pr };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to create PR';
+    return {
+      success: false,
+      error: message,
+      errorType: 'api_error',
+    };
+  }
+}

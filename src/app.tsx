@@ -1,14 +1,15 @@
-import React from 'react';
-import { Text } from 'ink';
+import { Box } from 'ink';
+import GitHubView from './components/github/GitHubView';
+import { TabItem, Tabs } from './components/ui/Tabs';
 
-type Props = {
-  name: string | undefined;
-};
-
-export default function App({ name = 'Stranger' }: Props) {
+export default function App() {
   return (
-    <Text>
-      Hello, <Text color="green">{name}</Text>
-    </Text>
+    <Box flexGrow={1} flexDirection="column" overflow="hidden">
+      <Tabs>
+        <TabItem name="GitHub">
+          <GitHubView />
+        </TabItem>
+      </Tabs>
+    </Box>
   );
 }
