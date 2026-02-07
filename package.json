@@ -1,6 +1,6 @@
 {
   "name": "clairo",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -27,6 +27,7 @@
     "ink-link": "^5.0.0",
     "ink-scroll-view": "^0.3.5",
     "ink-select-input": "^6.2.0",
+    "ink-text-input": "^6.0.0",
     "marked": "^17.0.1",
     "meow": "^11.0.0",
     "open": "^11.0.0",

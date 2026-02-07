@@ -32,6 +32,7 @@ export default function LogsView({ isFocused, onKeybindingsChange, refreshKey }:
     if (focusedBox === 'history') {
       bindings.push({ key: 'Enter', label: 'Select' });
     } else if (focusedBox === 'viewer') {
+      bindings.push({ key: 'i', label: 'Add Entry' });
       bindings.push({ key: 'e', label: 'Edit' });
       bindings.push({ key: 'n', label: 'New Log', color: 'green' });
       bindings.push({ key: 'r', label: 'Refresh' });
