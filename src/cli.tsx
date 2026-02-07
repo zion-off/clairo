@@ -2,26 +2,38 @@ import meow from 'meow';
 import App from './app.js';
 import { render } from './lib/render.js';
 
-meow(
+const cli = meow(
   `
 	Usage
 	  $ clairo
 
 	Options
-		--name  Your name
+	  --cwd <path>  Run in a different directory
+	  --version     Show version
+	  --help        Show this help
 
 	Examples
-	  $ clairo --name=Jane
-	  Hello, Jane
+	  $ clairo
+	  $ clairo --cwd ~/projects/other-repo
 `,
   {
     importMeta: import.meta,
     flags: {
-      name: {
-        type: 'string'
+      cwd: {
+        type: 'string',
+        shortFlag: 'C'
       }
     }
   }
 );
+
+if (cli.flags.cwd) {
+  try {
+    process.chdir(cli.flags.cwd);
+  } catch {
+    console.error(`Error: Cannot access directory "${cli.flags.cwd}"`);
+    process.exit(1);
+  }
+}
 
 render(<App />);
