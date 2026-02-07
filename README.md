@@ -7,29 +7,34 @@ Terminal dashboard for GitHub PRs and Jira tickets.
 - Node.js 18+
 - [GitHub CLI](https://cli.github.com/) (`gh`) installed and authenticated
 
-## Install
+## Usage
 
 ```bash
-pnpm install
-pnpm build
+npx clairo
 ```
 
-## Run
+### Options
 
-```bash
-pnpm start
+```
+--cwd <path>, -C   Run in a different directory
+--version          Show version
+--help             Show help
 ```
 
-Or for development:
+### Examples
 
 ```bash
-pnpm dev
+# Run in current directory
+npx clairo
+
+# Run in a different repo
+npx clairo --cwd ~/projects/other-repo
 ```
 
 ## Keyboard
 
-- `1-4` - Switch between boxes
+- `1-6` - Switch between boxes
 - `j/k` - Navigate lists
 - `Enter` - Select
-- `Esc` - Cancel
+- `o` - Open in browser
 - `Ctrl+C` - Quit
