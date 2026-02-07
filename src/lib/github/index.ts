@@ -1,6 +1,4 @@
 import { exec } from 'child_process';
-import { existsSync, readFileSync } from 'fs';
-import { join } from 'path';
 import { promisify } from 'util';
 
 const execAsync = promisify(exec);
@@ -209,32 +207,6 @@ export async function getPRDetails(
 }
 
 /**
- * Find PR template in repo (checks common locations)
- */
-export function getPRTemplate(repoPath: string): string | null {
-  const templatePaths = [
-    '.github/PULL_REQUEST_TEMPLATE.md',
-    '.github/pull_request_template.md',
-    'PULL_REQUEST_TEMPLATE.md',
-    'pull_request_template.md',
-    'docs/PULL_REQUEST_TEMPLATE.md',
-  ];
-
-  for (const templatePath of templatePaths) {
-    const fullPath = join(repoPath, templatePath);
-    if (existsSync(fullPath)) {
-      try {
-        return readFileSync(fullPath, 'utf-8');
-      } catch {
-        continue;
-      }
-    }
-  }
-
-  return null;
-}
-
-/**
  * Get the default branch for a repo
  */
 export async function getDefaultBranch(repo: string): Promise<GitHubResult<string>> {
@@ -262,54 +234,6 @@ export async function getDefaultBranch(repo: string): Promise<GitHubResult<strin
     return {
       success: false,
       error: 'Failed to get default branch',
-      errorType: 'api_error',
-    };
-  }
-}
-
-/**
- * Create a PR using gh CLI
- */
-export async function createPR(
-  repo: string,
-  title: string,
-  body: string,
-  baseBranch?: string
-): Promise<GitHubResult<PRListItem>> {
-  if (!(await isGhInstalled())) {
-    return {
-      success: false,
-      error: 'GitHub CLI (gh) is not installed',
-      errorType: 'not_installed',
-    };
-  }
-  if (!(await isGhAuthenticated())) {
-    return {
-      success: false,
-      error: "Not authenticated. Run 'gh auth login'",
-      errorType: 'not_authenticated',
-    };
-  }
-
-  try {
-    const baseArg = baseBranch ? `--base "${baseBranch}"` : '';
-    const fields = 'number,title,state,author,createdAt,isDraft';
-
-    // Escape title and body for shell
-    const escapedTitle = title.replace(/"/g, '\\"');
-    const escapedBody = body.replace(/"/g, '\\"');
-
-    const { stdout } = await execAsync(
-      `gh pr create --title "${escapedTitle}" --body "${escapedBody}" ${baseArg} --repo "${repo}" --json ${fields}`
-    );
-
-    const pr = JSON.parse(stdout) as PRListItem;
-    return { success: true, data: pr };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Failed to create PR';
-    return {
-      success: false,
-      error: message,
       errorType: 'api_error',
     };
   }

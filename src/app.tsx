@@ -31,7 +31,6 @@ export default function App() {
     <Box flexGrow={1} flexDirection="column" overflow="hidden">
       <GitHubView
         isFocused={focusedView === 'github'}
-        onModalChange={setModalOpen}
         onKeybindingsChange={focusedView === 'github' ? setContextBindings : undefined}
       />
       <JiraView

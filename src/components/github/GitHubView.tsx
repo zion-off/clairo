@@ -1,11 +1,11 @@
+import { exec } from 'child_process';
 import { useCallback, useEffect, useState } from 'react';
 import { TitledBox } from '@mishieck/ink-titled-box';
 import { Box, Text, useInput } from 'ink';
 import { getSelectedRemote, updateRepoConfig } from '../../lib/github/config.js';
 import { GitRemote, getCurrentBranch, getRepoRoot, isGitRepo, listRemotes } from '../../lib/github/git.js';
-import { PRDetails, PRListItem, createPR, getPRDetails, getPRTemplate, getRepoFromRemote, listPRsForBranch } from '../../lib/github/index.js';
+import { PRDetails, PRListItem, getPRDetails, getRepoFromRemote, listPRsForBranch } from '../../lib/github/index.js';
 import { Keybinding } from '../ui/KeybindingsBar.js';
-import CreatePRModal from './CreatePRModal.js';
 import PRDetailsBox from './PRDetailsBox.js';
 import PullRequestsBox from './PullRequestsBox.js';
 import RemotesBox from './RemotesBox.js';
@@ -14,11 +14,10 @@ type FocusedBox = 'remotes' | 'prs' | 'details';
 
 type Props = {
   isFocused: boolean;
-  onModalChange?: (isOpen: boolean) => void;
   onKeybindingsChange?: (bindings: Keybinding[]) => void;
 };
 
-export default function GitHubView({ isFocused, onModalChange, onKeybindingsChange }: Props) {
+export default function GitHubView({ isFocused, onKeybindingsChange }: Props) {
   const [isRepo, setIsRepo] = useState<boolean | null>(null);
   const [repoPath, setRepoPath] = useState<string | null>(null);
   const [remotes, setRemotes] = useState<GitRemote[]>([]);
@@ -34,37 +33,19 @@ export default function GitHubView({ isFocused, onModalChange, onKeybindingsChan
   const [loading, setLoading] = useState({
     remotes: true,
     prs: false,
-    details: false,
-    createPR: false
+    details: false
   });
   const [errors, setErrors] = useState<{
     remotes?: string;
     prs?: string;
     details?: string;
-    createPR?: string;
   }>({});
-
-  const [showCreatePR, setShowCreatePR] = useState(false);
-  const [prTemplate, setPrTemplate] = useState<string | null>(null);
 
   const [focusedBox, setFocusedBox] = useState<FocusedBox>('remotes');
 
-  // Close modal when focus is lost
-  useEffect(() => {
-    if (!isFocused) {
-      setShowCreatePR(false);
-      setErrors((prev) => ({ ...prev, createPR: undefined }));
-    }
-  }, [isFocused]);
-
-  // Notify parent when modal state changes
-  useEffect(() => {
-    onModalChange?.(showCreatePR);
-  }, [showCreatePR, onModalChange]);
-
   // Update keybindings based on focused box
   useEffect(() => {
-    if (!isFocused || showCreatePR) {
+    if (!isFocused) {
       onKeybindingsChange?.([]);
       return;
     }
@@ -75,14 +56,16 @@ export default function GitHubView({ isFocused, onModalChange, onKeybindingsChan
       bindings.push({ key: 'Enter', label: 'Select Remote' });
     } else if (focusedBox === 'prs') {
       bindings.push({ key: 'n', label: 'New PR', color: 'green' });
+      bindings.push({ key: 'r', label: 'Refresh' });
       bindings.push({ key: 'o', label: 'Open', color: 'green' });
       bindings.push({ key: 'y', label: 'Copy Link' });
     } else if (focusedBox === 'details') {
+      bindings.push({ key: 'r', label: 'Refresh' });
       bindings.push({ key: 'o', label: 'Open', color: 'green' });
     }
 
     onKeybindingsChange?.(bindings);
-  }, [isFocused, focusedBox, showCreatePR, onKeybindingsChange]);
+  }, [isFocused, focusedBox, onKeybindingsChange]);
 
   useEffect(() => {
     const gitRepoCheck = isGitRepo();
@@ -97,8 +80,6 @@ export default function GitHubView({ isFocused, onModalChange, onKeybindingsChan
     const rootResult = getRepoRoot();
     if (rootResult.success) {
       setRepoPath(rootResult.data);
-      const template = getPRTemplate(rootResult.data);
-      setPrTemplate(template);
     }
 
     const branchResult = getCurrentBranch();
@@ -119,6 +100,50 @@ export default function GitHubView({ isFocused, onModalChange, onKeybindingsChan
     setLoading((prev) => ({ ...prev, remotes: false }));
   }, []);
 
+  const refreshPRs = useCallback(async () => {
+    if (!currentBranch || !currentRepoSlug) return;
+
+    setLoading((prev) => ({ ...prev, prs: true }));
+
+    try {
+      const result = await listPRsForBranch(currentBranch, currentRepoSlug);
+      if (result.success) {
+        setPrs(result.data);
+        // Auto-select first PR if none selected
+        if (result.data.length > 0) {
+          setSelectedPR((prev) => prev ?? result.data[0]);
+        }
+        setErrors((prev) => ({ ...prev, prs: undefined }));
+      } else {
+        setErrors((prev) => ({ ...prev, prs: result.error }));
+      }
+    } catch (err) {
+      setErrors((prev) => ({ ...prev, prs: String(err) }));
+    } finally {
+      setLoading((prev) => ({ ...prev, prs: false }));
+    }
+  }, [currentBranch, currentRepoSlug]);
+
+  const refreshDetails = useCallback(async () => {
+    if (!selectedPR || !currentRepoSlug) return;
+
+    setLoading((prev) => ({ ...prev, details: true }));
+
+    try {
+      const result = await getPRDetails(selectedPR.number, currentRepoSlug);
+      if (result.success) {
+        setPrDetails(result.data);
+        setErrors((prev) => ({ ...prev, details: undefined }));
+      } else {
+        setErrors((prev) => ({ ...prev, details: result.error }));
+      }
+    } catch (err) {
+      setErrors((prev) => ({ ...prev, details: String(err) }));
+    } finally {
+      setLoading((prev) => ({ ...prev, details: false }));
+    }
+  }, [selectedPR, currentRepoSlug]);
+
   useEffect(() => {
     if (!selectedRemote || !currentBranch) return;
 
@@ -129,59 +154,23 @@ export default function GitHubView({ isFocused, onModalChange, onKeybindingsChan
     if (!repo) return;
 
     setCurrentRepoSlug(repo);
-    setLoading((prev) => ({ ...prev, prs: true }));
     setPrs([]);
     setSelectedPR(null);
-
-    const fetchPRs = async () => {
-      try {
-        const result = await listPRsForBranch(currentBranch, repo);
-        if (result.success) {
-          setPrs(result.data);
-          // Auto-select first PR
-          if (result.data.length > 0) {
-            setSelectedPR(result.data[0]);
-          }
-          setErrors((prev) => ({ ...prev, prs: undefined }));
-        } else {
-          setErrors((prev) => ({ ...prev, prs: result.error }));
-        }
-      } catch (err) {
-        setErrors((prev) => ({ ...prev, prs: String(err) }));
-      } finally {
-        setLoading((prev) => ({ ...prev, prs: false }));
-      }
-    };
-
-    fetchPRs();
   }, [selectedRemote, currentBranch, remotes]);
+
+  useEffect(() => {
+    if (currentRepoSlug && currentBranch) {
+      refreshPRs();
+    }
+  }, [currentRepoSlug, currentBranch, refreshPRs]);
 
   useEffect(() => {
     if (!selectedPR || !currentRepoSlug) {
       setPrDetails(null);
       return;
     }
-
-    setLoading((prev) => ({ ...prev, details: true }));
-
-    const fetchDetails = async () => {
-      try {
-        const result = await getPRDetails(selectedPR.number, currentRepoSlug);
-        if (result.success) {
-          setPrDetails(result.data);
-          setErrors((prev) => ({ ...prev, details: undefined }));
-        } else {
-          setErrors((prev) => ({ ...prev, details: result.error }));
-        }
-      } catch (err) {
-        setErrors((prev) => ({ ...prev, details: String(err) }));
-      } finally {
-        setLoading((prev) => ({ ...prev, details: false }));
-      }
-    };
-
-    fetchDetails();
-  }, [selectedPR, currentRepoSlug]);
+    refreshDetails();
+  }, [selectedPR, currentRepoSlug, refreshDetails]);
 
   const handleRemoteSelect = useCallback(
     (remoteName: string) => {
@@ -198,58 +187,24 @@ export default function GitHubView({ isFocused, onModalChange, onKeybindingsChan
   }, []);
 
   const handleCreatePR = useCallback(() => {
-    setShowCreatePR(true);
-    setErrors((prev) => ({ ...prev, createPR: undefined }));
-  }, []);
-
-  const handleCreatePRSubmit = useCallback(
-    async (title: string, body: string) => {
-      if (!currentRepoSlug) return;
-
-      setLoading((prev) => ({ ...prev, createPR: true }));
-      setErrors((prev) => ({ ...prev, createPR: undefined }));
-
-      try {
-        const result = await createPR(currentRepoSlug, title, body);
-        if (result.success) {
-          setShowCreatePR(false);
-          // Refresh PRs list
-          if (currentBranch) {
-            const prsResult = await listPRsForBranch(currentBranch, currentRepoSlug);
-            if (prsResult.success) {
-              setPrs(prsResult.data);
-              // Select the newly created PR
-              const newPR = prsResult.data.find((p) => p.number === result.data.number);
-              if (newPR) {
-                setSelectedPR(newPR);
-              }
-            }
-          }
-        } else {
-          setErrors((prev) => ({ ...prev, createPR: result.error }));
-        }
-      } catch (err) {
-        setErrors((prev) => ({ ...prev, createPR: String(err) }));
-      } finally {
-        setLoading((prev) => ({ ...prev, createPR: false }));
-      }
-    },
-    [currentRepoSlug, currentBranch]
-  );
-
-  const handleCreatePRCancel = useCallback(() => {
-    setShowCreatePR(false);
-    setErrors((prev) => ({ ...prev, createPR: undefined }));
+    // Open GitHub PR creation page in browser using gh CLI
+    exec('gh pr create --web', () => {
+      // Emit resize to refresh TUI after returning from browser
+      process.stdout.emit('resize');
+    });
   }, []);
 
   useInput(
     (input) => {
-      if (showCreatePR) return;
       if (input === '1') setFocusedBox('remotes');
       if (input === '2') setFocusedBox('prs');
       if (input === '3') setFocusedBox('details');
+      if (input === 'r') {
+        if (focusedBox === 'prs') refreshPRs();
+        if (focusedBox === 'details') refreshDetails();
+      }
     },
-    { isActive: isFocused && !showCreatePR }
+    { isActive: isFocused }
   );
 
   if (isRepo === false) {
@@ -268,7 +223,7 @@ export default function GitHubView({ isFocused, onModalChange, onKeybindingsChan
         onSelect={handleRemoteSelect}
         loading={loading.remotes}
         error={errors.remotes}
-        isFocused={isFocused && !showCreatePR && focusedBox === 'remotes'}
+        isFocused={isFocused && focusedBox === 'remotes'}
       />
       <PullRequestsBox
         prs={prs}
@@ -279,22 +234,13 @@ export default function GitHubView({ isFocused, onModalChange, onKeybindingsChan
         error={errors.prs}
         branch={currentBranch}
         repoSlug={currentRepoSlug}
-        isFocused={isFocused && !showCreatePR && focusedBox === 'prs'}
+        isFocused={isFocused && focusedBox === 'prs'}
       />
-      {showCreatePR && (
-        <CreatePRModal
-          template={prTemplate}
-          onSubmit={handleCreatePRSubmit}
-          onCancel={handleCreatePRCancel}
-          loading={loading.createPR}
-          error={errors.createPR}
-        />
-      )}
       <PRDetailsBox
         pr={prDetails}
         loading={loading.details}
         error={errors.details}
-        isFocused={isFocused && !showCreatePR && focusedBox === 'details'}
+        isFocused={isFocused && focusedBox === 'details'}
       />
     </Box>
   );
