@@ -52,12 +52,16 @@ export default function RemotesBox({ remotes, selectedRemote, onSelect, loading,
           remotes.map((remote, idx) => {
             const isHighlighted = isFocused && idx === highlightedIndex;
             const isSelected = remote.name === selectedRemote;
-            const prefix = isHighlighted ? '> ' : isSelected ? '● ' : '  ';
+            const cursor = isHighlighted ? '>' : ' ';
+            const indicator = isSelected ? ' *' : '';
             return (
-              <Text key={remote.name} color={isSelected ? 'green' : undefined}>
-                {prefix}
-                {remote.name} ({remote.url})
-              </Text>
+              <Box key={remote.name}>
+                <Text color={isHighlighted ? 'yellow' : undefined}>{cursor} </Text>
+                <Text color={isSelected ? 'green' : undefined}>
+                  {remote.name} ({remote.url})
+                </Text>
+                <Text dimColor>{indicator}</Text>
+              </Box>
             );
           })}
       </Box>

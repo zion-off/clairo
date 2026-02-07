@@ -76,12 +76,17 @@ export default function PullRequestsBox({
             {prs.map((pr, idx) => {
               const isHighlighted = isFocused && idx === highlightedIndex;
               const isSelected = pr.number === selectedPR?.number;
-              const prefix = isHighlighted ? '> ' : isSelected ? '● ' : '  ';
+              const cursor = isHighlighted ? '>' : ' ';
+              const indicator = isSelected ? ' *' : '';
               return (
-                <Text key={pr.number} color={isSelected ? 'green' : undefined}>
-                  {prefix}#{pr.number} {pr.isDraft ? '[Draft] ' : ''}
-                  {pr.title}
-                </Text>
+                <Box key={pr.number}>
+                  <Text color={isHighlighted ? 'yellow' : undefined}>{cursor} </Text>
+                  <Text color={isSelected ? 'green' : undefined}>
+                    #{pr.number} {pr.isDraft ? '[Draft] ' : ''}
+                    {pr.title}
+                  </Text>
+                  <Text dimColor>{indicator}</Text>
+                </Box>
               );
             })}
             <Text color="blue">{isFocused && highlightedIndex === prs.length ? '> ' : '  '}+ Create new PR</Text>
