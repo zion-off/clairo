@@ -1,16 +1,12 @@
-import { loadConfig, saveConfig } from '../config/index.js';
-
-export type RepoConfig = {
-  selectedRemote?: string;
-};
+import { loadConfig, saveConfig, RepositoryConfig } from '../config/index.js';
 
 /**
  * Get config for a specific repository
  */
-export function getRepoConfig(repoPath: string): RepoConfig {
+export function getRepoConfig(repoPath: string): RepositoryConfig {
   const config = loadConfig();
   const repos = config.repositories ?? {};
-  return (repos[repoPath] as RepoConfig) ?? {};
+  return repos[repoPath] ?? {};
 }
 
 /**
@@ -18,7 +14,7 @@ export function getRepoConfig(repoPath: string): RepoConfig {
  */
 export function updateRepoConfig(
   repoPath: string,
-  updates: Partial<RepoConfig>
+  updates: Partial<RepositoryConfig>
 ): void {
   const config = loadConfig();
   if (!config.repositories) {

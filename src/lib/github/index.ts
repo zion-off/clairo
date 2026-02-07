@@ -35,6 +35,7 @@ export type PRDetails = {
   number: number;
   title: string;
   body: string;
+  url: string;
   state: 'OPEN' | 'CLOSED' | 'MERGED';
   author: { login: string };
   createdAt: string;
@@ -92,6 +93,10 @@ export function getRepoFromRemote(remoteUrl: string): string | null {
 
 /**
  * List PRs for a specific branch
+ *
+ * Strategy:
+ * 1. Try `gh pr view` to auto-detect the PR for the current branch (handles forks correctly)
+ * 2. Fall back to fetching all PRs and filtering by branch name
  */
 export async function listPRsForBranch(
   branch: string,
@@ -112,13 +117,36 @@ export async function listPRsForBranch(
     };
   }
 
+  const fields = 'number,title,state,author,createdAt,isDraft';
+
+  // Option 2: Try gh pr view first (auto-detects PR for current branch, handles forks)
+  // Note: Don't use --repo here - gh pr view auto-detects the correct upstream
   try {
-    const fields = 'number,title,state,author,createdAt,isDraft';
     const { stdout } = await execAsync(
-      `gh pr list --head "${branch}" --json ${fields} --repo "${repo}"`
+      `gh pr view --json ${fields} 2>/dev/null`
     );
-    const prs = JSON.parse(stdout) as PRListItem[];
-    return { success: true, data: prs };
+    const pr = JSON.parse(stdout) as PRListItem;
+    return { success: true, data: [pr] };
+  } catch {
+    // gh pr view failed - branch might not have a PR or isn't linked
+  }
+
+  // Option 1 fallback: Fetch all PRs and filter by branch name
+  try {
+    const { stdout } = await execAsync(
+      `gh pr list --state open --json ${fields},headRefName --repo "${repo}" 2>/dev/null`
+    );
+    const allPrs = JSON.parse(stdout) as (PRListItem & { headRefName: string })[];
+
+    // Filter by branch name (handles fork format like "username:branch")
+    const prs = allPrs.filter((pr) =>
+      pr.headRefName === branch || pr.headRefName.endsWith(`:${branch}`)
+    );
+
+    // Remove headRefName from result (not part of PRListItem type)
+    const result = prs.map(({ headRefName: _, ...rest }) => rest);
+
+    return { success: true, data: result };
   } catch {
     return { success: false, error: 'Failed to fetch PRs', errorType: 'api_error' };
   }
@@ -151,6 +179,7 @@ export async function getPRDetails(
       'number',
       'title',
       'body',
+      'url',
       'state',
       'author',
       'createdAt',
