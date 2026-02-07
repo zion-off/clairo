@@ -9,25 +9,29 @@
   },
   "scripts": {
     "build": "tsup",
-    "dev": "tsup --watch",
+    "dev": "tsx --watch src/cli.tsx",
+    "start": "node dist/cli.js",
     "lint": "prettier --write . && eslint . --fix"
   },
   "files": [
     "dist"
   ],
   "dependencies": {
-    "ink": "^4.1.0",
+    "@mishieck/ink-titled-box": "^0.4.2",
+    "ink": "^6.6.0",
     "meow": "^11.0.0",
-    "react": "^18.2.0"
+    "react": "^19.2.4"
   },
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
-    "@types/react": "^18.0.32",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.2.13",
     "chalk": "^5.2.0",
     "eslint": "^9.0.0",
     "eslint-plugin-react": "^7.32.2",
     "prettier": "^2.8.7",
     "tsup": "^8.5.1",
+    "tsx": "^4.21.0",
     "typescript": "^5.0.3",
     "typescript-eslint": "^8.0.0"
   }

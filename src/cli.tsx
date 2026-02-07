@@ -1,9 +1,8 @@
 import meow from 'meow';
-import React from 'react';
-import { render } from 'ink';
 import App from './app.js';
+import { render } from './lib/render.js';
 
-const cli = meow(
+meow(
   `
 	Usage
 	  $ clairo
@@ -25,4 +24,4 @@ const cli = meow(
   }
 );
 
-render(<App name={cli.flags.name} />);
+render(<App />);
