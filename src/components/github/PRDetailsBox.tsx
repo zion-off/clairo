@@ -4,6 +4,7 @@ import { TitledBox } from '@mishieck/ink-titled-box';
 import { Box, Text, useInput } from 'ink';
 import { ScrollView, ScrollViewRef } from 'ink-scroll-view';
 import { PRDetails, StatusCheck } from '../../lib/github/index.js';
+import Markdown from '../ui/Markdown.js';
 
 type Props = {
   pr: PRDetails | null;
@@ -82,9 +83,9 @@ export default function PRDetailsBox({ pr, loading, error, isFocused }: Props) {
   );
 
   return (
-    <TitledBox borderStyle="round" titles={[displayTitle]} borderColor={borderColor} flexGrow={2}>
-      <Box flexGrow={1} overflow="hidden">
-        <ScrollView ref={scrollRef} flexGrow={1}>
+    <TitledBox borderStyle="round" titles={[displayTitle]} borderColor={borderColor} flexGrow={1}>
+      <Box flexDirection="column" flexGrow={1}>
+        <ScrollView ref={scrollRef}>
           <Box flexDirection="column" paddingX={1}>
           {loading && <Text dimColor>Loading details...</Text>}
           {error && <Text color="red">{error}</Text>}
@@ -154,7 +155,7 @@ export default function PRDetailsBox({ pr, loading, error, isFocused }: Props) {
               {pr.body && (
                 <Box marginTop={1} flexDirection="column">
                   <Text dimColor>Description:</Text>
-                  <Text>{pr.body}</Text>
+                  <Markdown>{pr.body}</Markdown>
                 </Box>
               )}
             </>
