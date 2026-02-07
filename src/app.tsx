@@ -6,6 +6,7 @@ import { LogsView } from './components/logs/index.js';
 import KeybindingsBar, { Keybinding } from './components/ui/KeybindingsBar.js';
 
 type FocusedView = 'github' | 'jira' | 'logs';
+type LogsFocusedBox = 'history' | 'viewer';
 
 export default function App() {
   const { exit } = useApp();
@@ -13,6 +14,7 @@ export default function App() {
   const [modalOpen, setModalOpen] = useState(false);
   const [contextBindings, setContextBindings] = useState<Keybinding[]>([]);
   const [logRefreshKey, setLogRefreshKey] = useState(0);
+  const [logsFocusedBox, setLogsFocusedBox] = useState<LogsFocusedBox>('history');
 
   const handleLogUpdated = useCallback(() => {
     setLogRefreshKey((prev) => prev + 1);
@@ -29,8 +31,13 @@ export default function App() {
       if (input === '4') {
         setFocusedView('jira');
       }
-      if (input === '5' || input === '6') {
+      if (input === '5') {
         setFocusedView('logs');
+        setLogsFocusedBox('history');
+      }
+      if (input === '6') {
+        setFocusedView('logs');
+        setLogsFocusedBox('viewer');
       }
     },
     { isActive: !modalOpen }
@@ -57,6 +64,8 @@ export default function App() {
             isFocused={focusedView === 'logs'}
             onKeybindingsChange={focusedView === 'logs' ? setContextBindings : undefined}
             refreshKey={logRefreshKey}
+            focusedBox={logsFocusedBox}
+            onFocusedBoxChange={setLogsFocusedBox}
           />
         </Box>
       </Box>

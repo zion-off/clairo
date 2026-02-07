@@ -11,14 +11,15 @@ type Props = {
   isFocused: boolean;
   onKeybindingsChange?: (bindings: Keybinding[]) => void;
   refreshKey?: number;
+  focusedBox: FocusedBox;
+  onFocusedBoxChange: (box: FocusedBox) => void;
 };
 
-export default function LogsView({ isFocused, onKeybindingsChange, refreshKey }: Props) {
+export default function LogsView({ isFocused, onKeybindingsChange, refreshKey, focusedBox, onFocusedBoxChange }: Props) {
   const [logFiles, setLogFiles] = useState<LogFile[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [logContent, setLogContent] = useState<string | null>(null);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
-  const [focusedBox, setFocusedBox] = useState<FocusedBox>('history');
 
   // Update keybindings based on focused box
   useEffect(() => {
@@ -127,8 +128,8 @@ export default function LogsView({ isFocused, onKeybindingsChange, refreshKey }:
   // Keyboard navigation for switching between boxes
   useInput(
     (input) => {
-      if (input === '5') setFocusedBox('history');
-      if (input === '6') setFocusedBox('viewer');
+      if (input === '5') onFocusedBoxChange('history');
+      if (input === '6') onFocusedBoxChange('viewer');
     },
     { isActive: isFocused }
   );
