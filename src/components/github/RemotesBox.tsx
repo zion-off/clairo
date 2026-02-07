@@ -38,12 +38,12 @@ export default function RemotesBox({ remotes, selectedRemote, onSelect, loading,
     { isActive: isFocused }
   );
 
-  const title = '1 Remotes';
-  const borderColor = isFocused ? 'cyan' : undefined;
+  const title = '[1] Remotes';
+  const borderColor = isFocused ? 'yellow' : undefined;
 
   return (
-    <TitledBox borderStyle="round" titles={[title]} borderColor={borderColor}>
-      <Box flexDirection="column" paddingX={1}>
+    <TitledBox borderStyle="round" titles={[title]} borderColor={borderColor} flexShrink={0}>
+      <Box flexDirection="column" paddingX={1} overflow="hidden">
         {loading && <Text dimColor>Loading...</Text>}
         {error && <Text color="red">{error}</Text>}
         {!loading && !error && remotes.length === 0 && <Text dimColor>No remotes configured</Text>}

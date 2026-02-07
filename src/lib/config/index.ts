@@ -4,8 +4,23 @@ import { dirname, join } from 'path';
 
 const CONFIG_PATH = join(homedir(), '.clairo', 'config.json');
 
+export type LinkedTicket = {
+  key: string;
+  summary: string;
+  status: string;
+  linkedAt: string;
+};
+
+export type RepositoryConfig = {
+  selectedRemote?: string;
+  jiraSiteUrl?: string;
+  jiraEmail?: string;
+  jiraApiToken?: string;
+  branchTickets?: Record<string, LinkedTicket[]>;
+};
+
 export type Config = {
-  repositories?: Record<string, Record<string, unknown>>;
+  repositories?: Record<string, RepositoryConfig>;
   [key: string]: unknown;
 };
 

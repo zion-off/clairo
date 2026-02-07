@@ -1,9 +1,6 @@
-import { spawnSync } from 'child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
-import { tmpdir } from 'os';
-import { join } from 'path';
 import { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
+import { openInEditor } from '../../lib/editor.js';
 
 type Props = {
   template: string | null;
@@ -14,33 +11,6 @@ type Props = {
 };
 
 type SelectedItem = 'title' | 'body' | 'submit';
-
-function openInEditor(content: string, filename: string): string | null {
-  const editor = process.env.VISUAL || process.env.EDITOR || 'vi';
-  const tempDir = mkdtempSync(join(tmpdir(), 'clairo-'));
-  const tempFile = join(tempDir, filename);
-
-  try {
-    writeFileSync(tempFile, content);
-    const result = spawnSync(editor, [tempFile], {
-      stdio: 'inherit'
-    });
-
-    process.stdout.write('\x1b[2J\x1b[H');
-
-    if (result.status !== 0) {
-      return null;
-    }
-
-    return readFileSync(tempFile, 'utf-8');
-  } finally {
-    try {
-      rmSync(tempDir, { recursive: true });
-    } catch {
-      // ignore cleanup errors
-    }
-  }
-}
 
 export default function CreatePRModal({ template, onSubmit, onCancel, loading, error }: Props) {
   const [title, setTitle] = useState('');
@@ -99,7 +69,7 @@ export default function CreatePRModal({ template, onSubmit, onCancel, loading, e
   const renderItem = (item: SelectedItem, label: string, value?: string) => {
     const isSelected = selectedItem === item;
     const prefix = isSelected ? '> ' : '  ';
-    const color = isSelected ? 'cyan' : undefined;
+    const color = isSelected ? 'yellow' : undefined;
 
     return (
       <Box flexDirection="column">

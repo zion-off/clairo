@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { TitledBox } from '@mishieck/ink-titled-box';
 import { Box, Text, useInput } from 'ink';
+import { copyToClipboard } from '../../lib/clipboard.js';
 import { PRListItem } from '../../lib/github/index.js';
 
 type Props = {
@@ -11,6 +12,7 @@ type Props = {
   loading: boolean;
   error?: string;
   branch: string | null;
+  repoSlug: string | null;
   isFocused: boolean;
 };
 
@@ -22,6 +24,7 @@ export default function PullRequestsBox({
   loading,
   error,
   branch,
+  repoSlug,
   isFocused
 }: Props) {
   const [highlightedIndex, setHighlightedIndex] = useState(0);
@@ -49,17 +52,22 @@ export default function PullRequestsBox({
           onSelect(prs[highlightedIndex]);
         }
       }
+      if (input === 'y' && repoSlug && prs[highlightedIndex]) {
+        const pr = prs[highlightedIndex];
+        const url = `https://github.com/${repoSlug}/pull/${pr.number}`;
+        copyToClipboard(url);
+      }
     },
     { isActive: isFocused }
   );
 
-  const title = '2 Pull Requests';
+  const title = '[2] Pull Requests';
   const subtitle = branch ? ` (${branch})` : '';
-  const borderColor = isFocused ? 'cyan' : undefined;
+  const borderColor = isFocused ? 'yellow' : undefined;
 
   return (
-    <TitledBox borderStyle="round" titles={[`${title}${subtitle}`]} borderColor={borderColor}>
-      <Box flexDirection="column" paddingX={1}>
+    <TitledBox borderStyle="round" titles={[`${title}${subtitle}`]} borderColor={borderColor} flexShrink={0}>
+      <Box flexDirection="column" paddingX={1} overflow="hidden">
         {loading && <Text dimColor>Loading PRs...</Text>}
         {error && <Text color="red">{error}</Text>}
         {!loading && !error && (

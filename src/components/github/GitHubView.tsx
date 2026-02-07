@@ -4,6 +4,7 @@ import { Box, Text, useInput } from 'ink';
 import { getSelectedRemote, updateRepoConfig } from '../../lib/github/config.js';
 import { GitRemote, getCurrentBranch, getRepoRoot, isGitRepo, listRemotes } from '../../lib/github/git.js';
 import { PRDetails, PRListItem, createPR, getPRDetails, getPRTemplate, getRepoFromRemote, listPRsForBranch } from '../../lib/github/index.js';
+import { Keybinding } from '../ui/KeybindingsBar.js';
 import CreatePRModal from './CreatePRModal.js';
 import PRDetailsBox from './PRDetailsBox.js';
 import PullRequestsBox from './PullRequestsBox.js';
@@ -11,7 +12,13 @@ import RemotesBox from './RemotesBox.js';
 
 type FocusedBox = 'remotes' | 'prs' | 'details';
 
-export default function GitHubView() {
+type Props = {
+  isFocused: boolean;
+  onModalChange?: (isOpen: boolean) => void;
+  onKeybindingsChange?: (bindings: Keybinding[]) => void;
+};
+
+export default function GitHubView({ isFocused, onModalChange, onKeybindingsChange }: Props) {
   const [isRepo, setIsRepo] = useState<boolean | null>(null);
   const [repoPath, setRepoPath] = useState<string | null>(null);
   const [remotes, setRemotes] = useState<GitRemote[]>([]);
@@ -41,6 +48,41 @@ export default function GitHubView() {
   const [prTemplate, setPrTemplate] = useState<string | null>(null);
 
   const [focusedBox, setFocusedBox] = useState<FocusedBox>('remotes');
+
+  // Close modal when focus is lost
+  useEffect(() => {
+    if (!isFocused) {
+      setShowCreatePR(false);
+      setErrors((prev) => ({ ...prev, createPR: undefined }));
+    }
+  }, [isFocused]);
+
+  // Notify parent when modal state changes
+  useEffect(() => {
+    onModalChange?.(showCreatePR);
+  }, [showCreatePR, onModalChange]);
+
+  // Update keybindings based on focused box
+  useEffect(() => {
+    if (!isFocused || showCreatePR) {
+      onKeybindingsChange?.([]);
+      return;
+    }
+
+    const bindings: Keybinding[] = [];
+
+    if (focusedBox === 'remotes') {
+      bindings.push({ key: 'Enter', label: 'Select Remote' });
+    } else if (focusedBox === 'prs') {
+      bindings.push({ key: 'n', label: 'New PR', color: 'green' });
+      bindings.push({ key: 'o', label: 'Open', color: 'green' });
+      bindings.push({ key: 'y', label: 'Copy Link' });
+    } else if (focusedBox === 'details') {
+      bindings.push({ key: 'o', label: 'Open', color: 'green' });
+    }
+
+    onKeybindingsChange?.(bindings);
+  }, [isFocused, focusedBox, showCreatePR, onKeybindingsChange]);
 
   useEffect(() => {
     const gitRepoCheck = isGitRepo();
@@ -207,7 +249,7 @@ export default function GitHubView() {
       if (input === '2') setFocusedBox('prs');
       if (input === '3') setFocusedBox('details');
     },
-    { isActive: !showCreatePR }
+    { isActive: isFocused && !showCreatePR }
   );
 
   if (isRepo === false) {
@@ -215,20 +257,6 @@ export default function GitHubView() {
       <TitledBox borderStyle="round" titles={['Error']} flexGrow={1}>
         <Text color="red">Current directory is not a git repository</Text>
       </TitledBox>
-    );
-  }
-
-  if (showCreatePR) {
-    return (
-      <Box flexDirection="column" flexGrow={1}>
-        <CreatePRModal
-          template={prTemplate}
-          onSubmit={handleCreatePRSubmit}
-          onCancel={handleCreatePRCancel}
-          loading={loading.createPR}
-          error={errors.createPR}
-        />
-      </Box>
     );
   }
 
@@ -240,7 +268,7 @@ export default function GitHubView() {
         onSelect={handleRemoteSelect}
         loading={loading.remotes}
         error={errors.remotes}
-        isFocused={focusedBox === 'remotes'}
+        isFocused={isFocused && !showCreatePR && focusedBox === 'remotes'}
       />
       <PullRequestsBox
         prs={prs}
@@ -250,13 +278,23 @@ export default function GitHubView() {
         loading={loading.prs}
         error={errors.prs}
         branch={currentBranch}
-        isFocused={focusedBox === 'prs'}
+        repoSlug={currentRepoSlug}
+        isFocused={isFocused && !showCreatePR && focusedBox === 'prs'}
       />
+      {showCreatePR && (
+        <CreatePRModal
+          template={prTemplate}
+          onSubmit={handleCreatePRSubmit}
+          onCancel={handleCreatePRCancel}
+          loading={loading.createPR}
+          error={errors.createPR}
+        />
+      )}
       <PRDetailsBox
         pr={prDetails}
         loading={loading.details}
         error={errors.details}
-        isFocused={focusedBox === 'details'}
+        isFocused={isFocused && !showCreatePR && focusedBox === 'details'}
       />
     </Box>
   );
