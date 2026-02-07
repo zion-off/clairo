@@ -23,13 +23,14 @@ export function logPRCreated(prNumber: number, title: string, jiraTickets: strin
  */
 export function logJiraStatusChanged(
   ticketKey: string,
+  ticketName: string,
   oldStatus: string,
   newStatus: string
 ): void {
   const timestamp = formatTimestamp();
   const today = getTodayDate();
 
-  const entry = `## ${timestamp} - Updated Jira ticket\n\n${ticketKey}: ${oldStatus} → ${newStatus}\n\n`;
+  const entry = `## ${timestamp} - Updated Jira ticket\n\n${ticketKey}: ${ticketName}\n${oldStatus} → ${newStatus}\n\n`;
 
   appendToLog(today, entry);
 }

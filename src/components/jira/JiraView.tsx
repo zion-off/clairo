@@ -358,7 +358,7 @@ export default function JiraView({ isFocused, onModalChange, onKeybindingsChange
           onComplete={(newStatus) => {
             const oldStatus = ticket.status;
             updateTicketStatus(repoPath, currentBranch, ticket.key, newStatus);
-            logJiraStatusChanged(ticket.key, oldStatus, newStatus);
+            logJiraStatusChanged(ticket.key, ticket.summary, oldStatus, newStatus);
             onLogUpdated?.();
             setShowStatusModal(false);
             refreshTickets();
