@@ -36,6 +36,7 @@ export default function LogsView({ isFocused, onKeybindingsChange, refreshKey, f
       bindings.push({ key: 'i', label: 'Add Entry' });
       bindings.push({ key: 'e', label: 'Edit' });
       bindings.push({ key: 'n', label: 'New Log', color: 'green' });
+      bindings.push({ key: 'c', label: 'Standup' });
       bindings.push({ key: 'r', label: 'Refresh' });
     }
 

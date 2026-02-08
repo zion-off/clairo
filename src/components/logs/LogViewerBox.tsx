@@ -3,6 +3,7 @@ import { TitledBox } from '@mishieck/ink-titled-box';
 import { Box, Text, useInput } from 'ink';
 import { ScrollView, ScrollViewRef } from 'ink-scroll-view';
 import TextInput from 'ink-text-input';
+import { ClaudeProcess, generateStandupNotes } from '../../lib/claude/index.js';
 import Markdown from '../ui/Markdown.js';
 import {
   appendToLog,
@@ -25,6 +26,9 @@ export default function LogViewerBox({ date, content, isFocused, onRefresh, onLo
   const scrollRef = useRef<ScrollViewRef>(null);
   const [isInputMode, setIsInputMode] = useState(false);
   const [inputValue, setInputValue] = useState('');
+  const [isGeneratingStandup, setIsGeneratingStandup] = useState(false);
+  const [standupResult, setStandupResult] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const claudeProcessRef = useRef<ClaudeProcess | null>(null);
 
   const title = '[6] Log Content';
   const borderColor = isFocused ? 'yellow' : undefined;
@@ -39,8 +43,22 @@ export default function LogViewerBox({ date, content, isFocused, onRefresh, onLo
         return;
       }
 
-      // Don't process other keys while in input mode
-      if (isInputMode) {
+      // Cancel standup generation on Escape
+      if (key.escape && isGeneratingStandup) {
+        claudeProcessRef.current?.cancel();
+        claudeProcessRef.current = null;
+        setIsGeneratingStandup(false);
+        return;
+      }
+
+      // Dismiss standup result on Escape
+      if (key.escape && standupResult) {
+        setStandupResult(null);
+        return;
+      }
+
+      // Don't process other keys while in input mode or showing standup result
+      if (isInputMode || standupResult) {
         return;
       }
 
@@ -75,6 +93,25 @@ export default function LogViewerBox({ date, content, isFocused, onRefresh, onLo
       // Refresh
       if (input === 'r') {
         onRefresh();
+      }
+
+      // Generate standup notes with Claude
+      if (input === 'c' && date && content && !isGeneratingStandup) {
+        setIsGeneratingStandup(true);
+        setStandupResult(null);
+
+        const process = generateStandupNotes(content);
+        claudeProcessRef.current = process;
+
+        process.promise.then((result) => {
+          claudeProcessRef.current = null;
+          setIsGeneratingStandup(false);
+          if (result.success) {
+            setStandupResult({ type: 'success', message: result.data });
+          } else if (result.error !== 'Cancelled') {
+            setStandupResult({ type: 'error', message: result.error });
+          }
+        });
       }
     },
     { isActive: isFocused }
@@ -125,6 +162,30 @@ export default function LogViewerBox({ date, content, isFocused, onRefresh, onLo
               onChange={(val) => setInputValue(val.replace(/[\r\n]/g, ''))}
               onSubmit={handleInputSubmit}
             />
+          </Box>
+        </TitledBox>
+      )}
+      {isGeneratingStandup && (
+        <TitledBox borderStyle="round" titles={['Standup Notes']} borderColor="yellow">
+          <Box paddingX={1} flexDirection="column">
+            <Text color="yellow">Generating standup notes...</Text>
+            <Text dimColor>Press Esc to cancel</Text>
+          </Box>
+        </TitledBox>
+      )}
+      {standupResult && (
+        <TitledBox
+          borderStyle="round"
+          titles={['Standup Notes']}
+          borderColor={standupResult.type === 'error' ? 'red' : 'green'}
+        >
+          <Box paddingX={1} flexDirection="column">
+            {standupResult.type === 'error' ? (
+              <Text color="red">{standupResult.message}</Text>
+            ) : (
+              <Markdown>{standupResult.message}</Markdown>
+            )}
+            <Text dimColor>Press Esc to dismiss</Text>
           </Box>
         </TitledBox>
       )}
