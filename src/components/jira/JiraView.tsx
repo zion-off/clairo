@@ -1,34 +1,24 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import open from 'open';
 import { TitledBox } from '@mishieck/ink-titled-box';
 import { Box, Text, useInput } from 'ink';
 import { copyToClipboard } from '../../lib/clipboard.js';
-import { getCurrentBranch, getRepoRoot, isGitRepo } from '../../lib/github/git.js';
-import {
-  addLinkedTicket,
-  extractTicketKeyFromBranch,
-  getIssue,
-  getJiraCredentials,
-  getJiraSiteUrl,
-  getLinkedTickets,
-  isJiraConfigured,
-  JiraAuth,
-  LinkedTicket,
-  parseTicketKey,
-  removeLinkedTicket,
-  setJiraCredentials,
-  setJiraSiteUrl,
-  updateTicketStatus,
-  validateCredentials,
-} from '../../lib/jira/index.js';
+import { getJiraCredentials, getJiraSiteUrl, updateTicketStatus } from '../../lib/jira/index.js';
 import { logJiraStatusChanged } from '../../lib/logs/logger.js';
+import { useGitRepo } from '../../hooks/github/index.js';
+import { useJiraTickets } from '../../hooks/jira/index.js';
+import { JIRA_KEYBINDINGS } from '../../constants/jira.js';
 import { Keybinding } from '../ui/KeybindingsBar.js';
 import ChangeStatusModal from './ChangeStatusModal.js';
 import ConfigureJiraSiteModal from './ConfigureJiraSiteModal.js';
 import LinkTicketModal from './LinkTicketModal.js';
 import TicketItem from './TicketItem.js';
 
-type JiraState = 'not_configured' | 'no_tickets' | 'has_tickets';
+type ModalState =
+  | { type: 'none' }
+  | { type: 'configure' }
+  | { type: 'link' }
+  | { type: 'status' };
 
 type Props = {
   isFocused: boolean;
@@ -38,250 +28,139 @@ type Props = {
 };
 
 export default function JiraView({ isFocused, onModalChange, onKeybindingsChange, onLogUpdated }: Props) {
-  const [repoPath, setRepoPath] = useState<string | null>(null);
-  const [currentBranch, setCurrentBranch] = useState<string | null>(null);
-  const [isRepo, setIsRepo] = useState<boolean | null>(null);
+  const repo = useGitRepo();
+  const jira = useJiraTickets();
 
-  const [jiraState, setJiraState] = useState<JiraState>('not_configured');
-  const [tickets, setTickets] = useState<LinkedTicket[]>([]);
+  const [modal, setModal] = useState<ModalState>({ type: 'none' });
   const [highlightedIndex, setHighlightedIndex] = useState(0);
 
-  const [showConfigureModal, setShowConfigureModal] = useState(false);
-  const [showLinkModal, setShowLinkModal] = useState(false);
-  const [showStatusModal, setShowStatusModal] = useState(false);
+  // Track last initialized context to prevent re-initialization
+  const lastInitRef = useRef<{ branch: string } | null>(null);
 
-  const [loading, setLoading] = useState({ configure: false, link: false });
-  const [errors, setErrors] = useState<{ configure?: string; link?: string }>({});
-
-  // Close modals when focus is lost
+  // Initialize Jira state when repo data is ready or branch changes
   useEffect(() => {
-    if (!isFocused) {
-      setShowConfigureModal(false);
-      setShowLinkModal(false);
-      setShowStatusModal(false);
-      setErrors({});
+    if (repo.loading || !repo.repoPath || !repo.currentBranch) return;
+
+    const current = { branch: repo.currentBranch };
+    const last = lastInitRef.current;
+
+    if (last && last.branch === current.branch) return;
+
+    lastInitRef.current = current;
+    jira.initializeJiraState(repo.repoPath, repo.currentBranch, repo.currentRepoSlug);
+  }, [repo.loading, repo.repoPath, repo.currentBranch, repo.currentRepoSlug, jira.initializeJiraState]);
+
+  // When focus is gained, refresh branch to detect external changes
+  useEffect(() => {
+    if (isFocused) {
+      repo.refreshBranch();
+    } else {
+      setModal({ type: 'none' });
     }
-  }, [isFocused]);
+  }, [isFocused, repo.refreshBranch]);
 
   // Notify parent when modal state changes
   useEffect(() => {
-    onModalChange?.(showConfigureModal || showLinkModal || showStatusModal);
-  }, [showConfigureModal, showLinkModal, showStatusModal, onModalChange]);
+    onModalChange?.(modal.type !== 'none');
+  }, [modal.type, onModalChange]);
 
   // Update keybindings based on state
   useEffect(() => {
-    if (!isFocused || showConfigureModal || showLinkModal || showStatusModal) {
+    if (!isFocused || modal.type !== 'none') {
       onKeybindingsChange?.([]);
       return;
     }
+    onKeybindingsChange?.(JIRA_KEYBINDINGS[jira.jiraState]);
+  }, [isFocused, jira.jiraState, modal.type, onKeybindingsChange]);
 
-    const bindings: Keybinding[] = [];
-
-    if (jiraState === 'not_configured') {
-      bindings.push({ key: 'c', label: 'Configure Jira' });
-    } else if (jiraState === 'no_tickets') {
-      bindings.push({ key: 'l', label: 'Link Ticket' });
-    } else if (jiraState === 'has_tickets') {
-      bindings.push({ key: 'l', label: 'Link' });
-      bindings.push({ key: 's', label: 'Status' });
-      bindings.push({ key: 'd', label: 'Unlink', color: 'red' });
-      bindings.push({ key: 'o', label: 'Open', color: 'green' });
-      bindings.push({ key: 'y', label: 'Copy Link' });
-    }
-
-    onKeybindingsChange?.(bindings);
-  }, [isFocused, jiraState, showConfigureModal, showLinkModal, showStatusModal, onKeybindingsChange]);
-
-  // Initialize repo info
-  useEffect(() => {
-    const gitRepoCheck = isGitRepo();
-    setIsRepo(gitRepoCheck);
-
-    if (!gitRepoCheck) return;
-
-    const rootResult = getRepoRoot();
-    if (rootResult.success) {
-      setRepoPath(rootResult.data);
-    }
-
-    const branchResult = getCurrentBranch();
-    if (branchResult.success) {
-      setCurrentBranch(branchResult.data);
-    }
-  }, []);
-
-  // Load Jira state when repo/branch changes
-  useEffect(() => {
-    if (!repoPath || !currentBranch) return;
-
-    if (!isJiraConfigured(repoPath)) {
-      setJiraState('not_configured');
-      setTickets([]);
-      return;
-    }
-
-    const linkedTickets = getLinkedTickets(repoPath, currentBranch);
-    setTickets(linkedTickets);
-    setJiraState(linkedTickets.length > 0 ? 'has_tickets' : 'no_tickets');
-  }, [repoPath, currentBranch]);
-
-  // Auto-detect and link ticket from branch name
-  useEffect(() => {
-    if (!repoPath || !currentBranch) return;
-    if (jiraState !== 'no_tickets') return;
-
-    const ticketKey = extractTicketKeyFromBranch(currentBranch);
-    if (!ticketKey) return;
-
-    // Check if already linked
-    const existingTickets = getLinkedTickets(repoPath, currentBranch);
-    if (existingTickets.some((t) => t.key === ticketKey)) return;
-
-    const siteUrl = getJiraSiteUrl(repoPath);
-    const creds = getJiraCredentials(repoPath);
-    if (!siteUrl || !creds.email || !creds.apiToken) return;
-
-    const auth: JiraAuth = { siteUrl, email: creds.email, apiToken: creds.apiToken };
-
-    // Fetch and auto-link the ticket
-    getIssue(auth, ticketKey).then((result) => {
-      if (result.success) {
-        const linkedTicket: LinkedTicket = {
-          key: result.data.key,
-          summary: result.data.fields.summary,
-          status: result.data.fields.status.name,
-          linkedAt: new Date().toISOString(),
-        };
-        addLinkedTicket(repoPath, currentBranch, linkedTicket);
-        setTickets([linkedTicket]);
-        setJiraState('has_tickets');
-      }
-    });
-  }, [repoPath, currentBranch, jiraState]);
-
-  const refreshTickets = useCallback(() => {
-    if (!repoPath || !currentBranch) return;
-    const linkedTickets = getLinkedTickets(repoPath, currentBranch);
-    setTickets(linkedTickets);
-    setJiraState(linkedTickets.length > 0 ? 'has_tickets' : 'no_tickets');
-  }, [repoPath, currentBranch]);
+  // Use ref pattern for callbacks with many dependencies
+  const contextRef = useRef({ repo, jira, highlightedIndex, onLogUpdated });
+  contextRef.current = { repo, jira, highlightedIndex, onLogUpdated };
 
   const handleConfigureSubmit = useCallback(
     async (siteUrl: string, email: string, apiToken: string) => {
-      if (!repoPath) return;
+      const { repo } = contextRef.current;
+      if (!repo.repoPath) return;
 
-      setLoading((prev) => ({ ...prev, configure: true }));
-      setErrors((prev) => ({ ...prev, configure: undefined }));
-
-      const auth: JiraAuth = { siteUrl, email, apiToken };
-      const result = await validateCredentials(auth);
-
-      if (!result.success) {
-        setErrors((prev) => ({ ...prev, configure: result.error }));
-        setLoading((prev) => ({ ...prev, configure: false }));
-        return;
+      const success = await jira.configureJira(repo.repoPath, siteUrl, email, apiToken);
+      if (success) {
+        setModal({ type: 'none' });
       }
-
-      setJiraSiteUrl(repoPath, siteUrl);
-      setJiraCredentials(repoPath, email, apiToken);
-      setShowConfigureModal(false);
-      setJiraState('no_tickets');
-      setLoading((prev) => ({ ...prev, configure: false }));
     },
-    [repoPath]
+    [jira.configureJira]
   );
 
   const handleLinkSubmit = useCallback(
     async (ticketInput: string) => {
-      if (!repoPath || !currentBranch) return;
+      const { repo } = contextRef.current;
+      if (!repo.repoPath || !repo.currentBranch) return;
 
-      setLoading((prev) => ({ ...prev, link: true }));
-      setErrors((prev) => ({ ...prev, link: undefined }));
-
-      const ticketKey = parseTicketKey(ticketInput);
-      if (!ticketKey) {
-        setErrors((prev) => ({ ...prev, link: 'Invalid ticket format. Use PROJ-123 or a Jira URL.' }));
-        setLoading((prev) => ({ ...prev, link: false }));
-        return;
+      const success = await jira.linkTicket(repo.repoPath, repo.currentBranch, ticketInput);
+      if (success) {
+        setModal({ type: 'none' });
       }
-
-      const siteUrl = getJiraSiteUrl(repoPath);
-      const creds = getJiraCredentials(repoPath);
-
-      if (!siteUrl || !creds.email || !creds.apiToken) {
-        setErrors((prev) => ({ ...prev, link: 'Jira not configured' }));
-        setLoading((prev) => ({ ...prev, link: false }));
-        return;
-      }
-
-      const auth: JiraAuth = { siteUrl, email: creds.email, apiToken: creds.apiToken };
-      const result = await getIssue(auth, ticketKey);
-
-      if (!result.success) {
-        setErrors((prev) => ({ ...prev, link: result.error }));
-        setLoading((prev) => ({ ...prev, link: false }));
-        return;
-      }
-
-      const linkedTicket: LinkedTicket = {
-        key: result.data.key,
-        summary: result.data.fields.summary,
-        status: result.data.fields.status.name,
-        linkedAt: new Date().toISOString(),
-      };
-
-      addLinkedTicket(repoPath, currentBranch, linkedTicket);
-      refreshTickets();
-      setShowLinkModal(false);
-      setLoading((prev) => ({ ...prev, link: false }));
     },
-    [repoPath, currentBranch, refreshTickets]
+    [jira.linkTicket]
   );
 
   const handleUnlinkTicket = useCallback(() => {
-    if (!repoPath || !currentBranch || tickets.length === 0) return;
-    const ticket = tickets[highlightedIndex];
+    const { repo, jira: j, highlightedIndex: idx } = contextRef.current;
+    if (!repo.repoPath || !repo.currentBranch || j.tickets.length === 0) return;
+
+    const ticket = j.tickets[idx];
     if (ticket) {
-      removeLinkedTicket(repoPath, currentBranch, ticket.key);
-      refreshTickets();
+      j.unlinkTicket(repo.repoPath, repo.currentBranch, ticket.key);
+      j.refreshTickets(repo.repoPath, repo.currentBranch);
       setHighlightedIndex((prev) => Math.max(0, prev - 1));
     }
-  }, [repoPath, currentBranch, tickets, highlightedIndex, refreshTickets]);
+  }, []);
 
   const handleOpenInBrowser = useCallback(() => {
-    if (!repoPath || tickets.length === 0) return;
-    const ticket = tickets[highlightedIndex];
-    const siteUrl = getJiraSiteUrl(repoPath);
+    const { repo, jira: j, highlightedIndex: idx } = contextRef.current;
+    if (!repo.repoPath || j.tickets.length === 0) return;
+
+    const ticket = j.tickets[idx];
+    const siteUrl = getJiraSiteUrl(repo.repoPath);
     if (ticket && siteUrl) {
       const url = `${siteUrl}/browse/${ticket.key}`;
       open(url).catch(() => {});
     }
-  }, [repoPath, tickets, highlightedIndex]);
+  }, []);
+
+  const handleCopyLink = useCallback(() => {
+    const { repo, jira: j, highlightedIndex: idx } = contextRef.current;
+    if (!repo.repoPath) return;
+
+    const ticket = j.tickets[idx];
+    const siteUrl = getJiraSiteUrl(repo.repoPath);
+    if (ticket && siteUrl) {
+      const url = `${siteUrl}/browse/${ticket.key}`;
+      copyToClipboard(url);
+    }
+  }, []);
 
   // Keyboard navigation
   useInput(
     (input, key) => {
-      if (showConfigureModal || showLinkModal || showStatusModal) return;
-
-      if (input === 'c' && jiraState === 'not_configured') {
-        setShowConfigureModal(true);
+      if (input === 'c' && jira.jiraState === 'not_configured') {
+        setModal({ type: 'configure' });
         return;
       }
 
-      if (input === 'l' && jiraState !== 'not_configured') {
-        setShowLinkModal(true);
+      if (input === 'l' && jira.jiraState !== 'not_configured') {
+        setModal({ type: 'link' });
         return;
       }
 
-      if (jiraState === 'has_tickets') {
+      if (jira.jiraState === 'has_tickets') {
         if (key.upArrow || input === 'k') {
           setHighlightedIndex((prev) => Math.max(0, prev - 1));
         }
         if (key.downArrow || input === 'j') {
-          setHighlightedIndex((prev) => Math.min(tickets.length - 1, prev + 1));
+          setHighlightedIndex((prev) => Math.min(jira.tickets.length - 1, prev + 1));
         }
         if (input === 's') {
-          setShowStatusModal(true);
+          setModal({ type: 'status' });
         }
         if (input === 'd') {
           handleUnlinkTicket();
@@ -289,20 +168,16 @@ export default function JiraView({ isFocused, onModalChange, onKeybindingsChange
         if (input === 'o') {
           handleOpenInBrowser();
         }
-        if (input === 'y' && repoPath) {
-          const ticket = tickets[highlightedIndex];
-          const siteUrl = getJiraSiteUrl(repoPath);
-          if (ticket && siteUrl) {
-            const url = `${siteUrl}/browse/${ticket.key}`;
-            copyToClipboard(url);
-          }
+        if (input === 'y') {
+          handleCopyLink();
         }
       }
     },
-    { isActive: isFocused && !showConfigureModal && !showLinkModal && !showStatusModal }
+    { isActive: isFocused && modal.type === 'none' }
   );
 
-  if (isRepo === false) {
+  // Early return for non-git repo
+  if (repo.isRepo === false) {
     return (
       <TitledBox borderStyle="round" titles={['Jira']} flexShrink={0}>
         <Text color="red">Not a git repository</Text>
@@ -310,9 +185,10 @@ export default function JiraView({ isFocused, onModalChange, onKeybindingsChange
     );
   }
 
-  if (showConfigureModal) {
-    const siteUrl = repoPath ? getJiraSiteUrl(repoPath) : undefined;
-    const creds = repoPath ? getJiraCredentials(repoPath) : { email: null, apiToken: null };
+  // Modal rendering
+  if (modal.type === 'configure') {
+    const siteUrl = repo.repoPath ? getJiraSiteUrl(repo.repoPath) : undefined;
+    const creds = repo.repoPath ? getJiraCredentials(repo.repoPath) : { email: null, apiToken: null };
 
     return (
       <Box flexDirection="column" flexShrink={0}>
@@ -321,70 +197,67 @@ export default function JiraView({ isFocused, onModalChange, onKeybindingsChange
           initialEmail={creds.email ?? undefined}
           onSubmit={handleConfigureSubmit}
           onCancel={() => {
-            setShowConfigureModal(false);
-            setErrors((prev) => ({ ...prev, configure: undefined }));
+            setModal({ type: 'none' });
+            jira.clearError('configure');
           }}
-          loading={loading.configure}
-          error={errors.configure}
+          loading={jira.loading.configure}
+          error={jira.errors.configure}
         />
       </Box>
     );
   }
 
-  if (showLinkModal) {
+  if (modal.type === 'link') {
     return (
       <Box flexDirection="column" flexShrink={0}>
         <LinkTicketModal
           onSubmit={handleLinkSubmit}
           onCancel={() => {
-            setShowLinkModal(false);
-            setErrors((prev) => ({ ...prev, link: undefined }));
+            setModal({ type: 'none' });
+            jira.clearError('link');
           }}
-          loading={loading.link}
-          error={errors.link}
+          loading={jira.loading.link}
+          error={jira.errors.link}
         />
       </Box>
     );
   }
 
-  if (showStatusModal && repoPath && currentBranch && tickets[highlightedIndex]) {
-    const ticket = tickets[highlightedIndex];
+  if (modal.type === 'status' && repo.repoPath && repo.currentBranch && jira.tickets[highlightedIndex]) {
+    const ticket = jira.tickets[highlightedIndex];
     return (
       <Box flexDirection="column" flexShrink={0}>
         <ChangeStatusModal
-          repoPath={repoPath}
+          repoPath={repo.repoPath}
           ticketKey={ticket.key}
           currentStatus={ticket.status}
           onComplete={(newStatus) => {
             const oldStatus = ticket.status;
-            updateTicketStatus(repoPath, currentBranch, ticket.key, newStatus);
+            updateTicketStatus(repo.repoPath!, repo.currentBranch!, ticket.key, newStatus);
             logJiraStatusChanged(ticket.key, ticket.summary, oldStatus, newStatus);
             onLogUpdated?.();
-            setShowStatusModal(false);
-            refreshTickets();
+            setModal({ type: 'none' });
+            jira.refreshTickets(repo.repoPath!, repo.currentBranch!);
           }}
-          onCancel={() => setShowStatusModal(false)}
+          onCancel={() => setModal({ type: 'none' })}
         />
       </Box>
     );
   }
 
+  // Main view
   const title = '[4] Jira';
   const borderColor = isFocused ? 'yellow' : undefined;
 
   return (
     <TitledBox borderStyle="round" titles={[title]} borderColor={borderColor} flexShrink={0}>
       <Box flexDirection="column" paddingX={1}>
-        {jiraState === 'not_configured' && (
-          <Text dimColor>No Jira site configured</Text>
-        )}
+        {jira.jiraState === 'not_configured' && <Text dimColor>No Jira site configured</Text>}
 
-        {jiraState === 'no_tickets' && (
-          <Text dimColor>No tickets linked to this branch</Text>
-        )}
+        {jira.jiraState === 'no_tickets' && <Text dimColor>No tickets linked to this branch</Text>}
 
-        {jiraState === 'has_tickets' &&
-          tickets.map((ticket, idx) => (
+        {jira.jiraState === 'has_tickets' &&
+          jira.tickets.map((ticket, idx) => (
             <TicketItem
               key={ticket.key}
               ticketKey={ticket.key}

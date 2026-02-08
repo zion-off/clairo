@@ -59,18 +59,20 @@ export function extractSiteUrl(ticketUrl: string): string | null {
 }
 
 /**
- * Extract a Jira ticket key from a branch name
+ * Extract a Jira ticket key from any text (branch name, PR title, etc.)
  * Supports formats like:
  * - "PROJ-123"
  * - "feature/PROJ-123"
  * - "feature/PROJ-123-add-login"
  * - "PROJ-123-some-description"
+ * - "[PROJ-123] Fix bug"
+ * - "PROJ-123: Add feature"
  *
  * Returns the normalized uppercase ticket key, or null if not found
  */
-export function extractTicketKeyFromBranch(branchName: string): string | null {
-  // Match PROJ-123 pattern anywhere in the branch name
-  const match = branchName.match(/([A-Za-z][A-Za-z0-9]+-\d+)/);
+export function extractTicketKey(text: string): string | null {
+  // Match PROJ-123 pattern anywhere in the text
+  const match = text.match(/([A-Za-z][A-Za-z0-9]+-\d+)/);
   if (match) {
     const candidate = match[1].toUpperCase();
     if (isValidTicketKeyFormat(candidate)) {
