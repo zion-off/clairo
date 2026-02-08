@@ -1,9 +1,9 @@
 import open from 'open';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { TitledBox } from '@mishieck/ink-titled-box';
 import { Box, Text, useInput } from 'ink';
 import { ScrollView } from 'ink-scroll-view';
-import { useScrollToIndex } from '../../hooks/index.js';
+import { useListNavigation } from '../../hooks/index.js';
 import { copyToClipboard } from '../../lib/clipboard.js';
 import { PRListItem } from '../../lib/github/index.js';
 
@@ -16,7 +16,7 @@ type Props = {
   error?: string;
   branch: string | null;
   repoSlug: string | null;
-  isFocused: boolean;
+  isActive: boolean;
 };
 
 export default function PullRequestsBox({
@@ -28,35 +28,27 @@ export default function PullRequestsBox({
   error,
   branch,
   repoSlug,
-  isFocused
+  isActive
 }: Props) {
-  const [highlightedIndex, setHighlightedIndex] = useState(0);
   const [copied, setCopied] = useState(false);
-  const scrollRef = useScrollToIndex(highlightedIndex);
-  const totalItems = prs.length + 1; // PRs + "Create new PR"
+  const selectedIndex = prs.findIndex((p) => p.number === selectedPR?.number);
 
-  useEffect(() => {
-    const idx = prs.findIndex((p) => p.number === selectedPR?.number);
-    if (idx >= 0) setHighlightedIndex(idx);
-  }, [selectedPR, prs]);
+  const { highlightedIndex, scrollRef } = useListNavigation({
+    items: prs,
+    totalItems: prs.length + 1,
+    selectedIndex: selectedIndex >= 0 ? selectedIndex : undefined,
+    onSelect: (index) => {
+      if (index === prs.length) {
+        onCreatePR();
+      } else if (prs[index]) {
+        onSelect(prs[index]);
+      }
+    },
+    isActive: isActive
+  });
 
   useInput(
-    (input, key) => {
-      if (!isFocused) return;
-
-      if (key.upArrow || input === 'k') {
-        setHighlightedIndex((prev) => Math.max(0, prev - 1));
-      }
-      if (key.downArrow || input === 'j') {
-        setHighlightedIndex((prev) => Math.min(totalItems - 1, prev + 1));
-      }
-      if (input === ' ') {
-        if (highlightedIndex === prs.length) {
-          onCreatePR();
-        } else if (prs[highlightedIndex]) {
-          onSelect(prs[highlightedIndex]);
-        }
-      }
+    (input) => {
       if (input === 'y' && repoSlug && prs[highlightedIndex]) {
         const pr = prs[highlightedIndex];
         const url = `https://github.com/${repoSlug}/pull/${pr.number}`;
@@ -70,13 +62,13 @@ export default function PullRequestsBox({
         open(url).catch(() => {});
       }
     },
-    { isActive: isFocused }
+    { isActive: isActive }
   );
 
   const title = '[2] Pull Requests';
   const subtitle = branch ? ` (${branch})` : '';
   const copiedIndicator = copied ? ' [Copied!]' : '';
-  const borderColor = isFocused ? 'yellow' : undefined;
+  const borderColor = isActive ? 'yellow' : undefined;
 
   return (
     <TitledBox
@@ -96,7 +88,7 @@ export default function PullRequestsBox({
               </Text>
             )}
             {prs.map((pr, idx) => {
-              const isHighlighted = isFocused && idx === highlightedIndex;
+              const isHighlighted = isActive && idx === highlightedIndex;
               const isSelected = pr.number === selectedPR?.number;
               const cursor = isHighlighted ? '>' : ' ';
               const indicator = isSelected ? ' *' : '';
@@ -112,7 +104,7 @@ export default function PullRequestsBox({
               );
             })}
             <Text key="create" color="blue">
-              {isFocused && highlightedIndex === prs.length ? '> ' : '  '}+ Create new PR
+              {isActive && highlightedIndex === prs.length ? '> ' : '  '}+ Create new PR
             </Text>
           </ScrollView>
         )}

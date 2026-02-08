@@ -1,8 +1,7 @@
-import { useEffect, useState } from 'react';
 import { TitledBox } from '@mishieck/ink-titled-box';
-import { Box, Text, useInput } from 'ink';
+import { Box, Text } from 'ink';
 import { ScrollView } from 'ink-scroll-view';
-import { useScrollToIndex } from '../../hooks/index.js';
+import { useListNavigation } from '../../hooks/index.js';
 import { GitRemote } from '../../lib/github/git.js';
 
 type Props = {
@@ -11,38 +10,21 @@ type Props = {
   onSelect: (name: string) => void;
   loading: boolean;
   error?: string;
-  isFocused: boolean;
+  isActive: boolean;
 };
 
-export default function RemotesBox({ remotes, selectedRemote, onSelect, loading, error, isFocused }: Props) {
-  const [highlightedIndex, setHighlightedIndex] = useState(0);
-  const scrollRef = useScrollToIndex(highlightedIndex);
+export default function RemotesBox({ remotes, selectedRemote, onSelect, loading, error, isActive }: Props) {
+  const selectedIndex = remotes.findIndex((r) => r.name === selectedRemote);
 
-  // Sync highlight with selected remote
-  useEffect(() => {
-    const idx = remotes.findIndex((r) => r.name === selectedRemote);
-    if (idx >= 0) setHighlightedIndex(idx);
-  }, [selectedRemote, remotes]);
-
-  useInput(
-    (input, key) => {
-      if (!isFocused || remotes.length === 0) return;
-
-      if (key.upArrow || input === 'k') {
-        setHighlightedIndex((prev) => Math.max(0, prev - 1));
-      }
-      if (key.downArrow || input === 'j') {
-        setHighlightedIndex((prev) => Math.min(remotes.length - 1, prev + 1));
-      }
-      if (input === ' ') {
-        onSelect(remotes[highlightedIndex].name);
-      }
-    },
-    { isActive: isFocused }
-  );
+  const { highlightedIndex, scrollRef } = useListNavigation({
+    items: remotes,
+    selectedIndex: selectedIndex >= 0 ? selectedIndex : undefined,
+    onSelect: (index) => onSelect(remotes[index].name),
+    isActive
+  });
 
   const title = '[1] Remotes';
-  const borderColor = isFocused ? 'yellow' : undefined;
+  const borderColor = isActive ? 'yellow' : undefined;
 
   return (
     <TitledBox borderStyle="round" titles={[title]} borderColor={borderColor} height={5}>
@@ -53,7 +35,7 @@ export default function RemotesBox({ remotes, selectedRemote, onSelect, loading,
         {!loading && !error && remotes.length > 0 && (
           <ScrollView ref={scrollRef}>
             {remotes.map((remote, idx) => {
-              const isHighlighted = isFocused && idx === highlightedIndex;
+              const isHighlighted = isActive && idx === highlightedIndex;
               const isSelected = remote.name === selectedRemote;
               const cursor = isHighlighted ? '>' : ' ';
               const indicator = isSelected ? ' *' : '';

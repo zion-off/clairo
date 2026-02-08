@@ -178,7 +178,7 @@ export default function GitHubView({ isFocused, onFocusedBoxChange, onLogUpdated
         onSelect={handleRemoteSelect}
         loading={repo.loading}
         error={repo.error}
-        isFocused={isFocused && focusedBox === 'remotes'}
+        isActive={isFocused && focusedBox === 'remotes'}
       />
       <PullRequestsBox
         prs={pullRequests.prs}
@@ -189,7 +189,7 @@ export default function GitHubView({ isFocused, onFocusedBoxChange, onLogUpdated
         error={pullRequests.errors.prs}
         branch={repo.currentBranch}
         repoSlug={repo.currentRepoSlug}
-        isFocused={isFocused && focusedBox === 'prs'}
+        isActive={isFocused && focusedBox === 'prs'}
       />
       <PRDetailsBox
         pr={pullRequests.prDetails}

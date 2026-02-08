@@ -169,7 +169,7 @@ export default function ConfigureJiraSiteModal({
                     {isSelected ? '> ' : '  '}
                     {config.siteUrl}
                   </Text>
-                  <Text dimColor>    {config.email}</Text>
+                  <Text dimColor> {config.email}</Text>
                 </Box>
               );
             })}

@@ -1,31 +1,74 @@
-import { useCallback, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useInput } from 'ink';
+import { useScrollToIndex } from './useScrollToIndex.js';
+
+type UseListNavigationOptions<T> = {
+  items: T[];
+  totalItems?: number;
+  selectedIndex?: number;
+  onSelect?: (index: number) => void;
+  isActive?: boolean;
+};
 
 /**
- * Generic list navigation hook for managing highlighted index.
+ * Manages keyboard-driven list navigation with scroll tracking.
  *
- * @param length - Current length of the list (used to clamp index)
+ * Handles highlighted index state, j/k and arrow key movement, space-to-select,
+ * and automatic scroll-into-view via a returned `scrollRef` for `ScrollView`.
+ *
+ * When `isActive` is true, the hook registers its own `useInput` handler for
+ * navigation and selection. When false (or omitted), input handling is disabled
+ * and callers can drive navigation manually via `prev()`, `next()`, and `setIndex()`.
+ *
+ * Use `totalItems` when the navigable range exceeds `items.length` (e.g. a virtual
+ * "Create new" entry appended to the list).
  */
-export function useListNavigation(length: number) {
-  const [index, setIndex] = useState(0);
+export function useListNavigation<T>({
+  items,
+  totalItems,
+  selectedIndex,
+  onSelect,
+  isActive
+}: UseListNavigationOptions<T>) {
+  const navLength = totalItems ?? items.length;
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const scrollRef = useScrollToIndex(highlightedIndex);
 
-  const prev = useCallback(() => {
-    setIndex((i) => Math.max(0, i - 1));
-  }, []);
+  useEffect(() => {
+    if (selectedIndex !== undefined && selectedIndex >= 0) {
+      setHighlightedIndex(selectedIndex);
+    }
+  }, [selectedIndex]);
 
-  const next = useCallback(() => {
-    setIndex((i) => Math.min(length - 1, i + 1));
-  }, [length]);
+  const prev = () => setHighlightedIndex((i) => Math.max(0, i - 1));
+  const next = () => setHighlightedIndex((i) => Math.min(navLength - 1, i + 1));
 
-  // Clamp index when length changes
-  const clampedIndex = Math.min(index, Math.max(0, length - 1));
+  useInput(
+    (input, key) => {
+      if (navLength === 0) return;
 
-  const reset = useCallback(() => setIndex(0), []);
+      if (key.upArrow || input === 'k') {
+        prev();
+      }
+      if (key.downArrow || input === 'j') {
+        next();
+      }
+      if (input === ' ' && onSelect) {
+        onSelect(highlightedIndex);
+      }
+    },
+    { isActive: isActive === true }
+  );
+
+  const clampedIndex = navLength === 0 ? 0 : Math.min(highlightedIndex, Math.max(0, navLength - 1));
 
   return {
-    index: length === 0 ? 0 : clampedIndex,
+    highlightedIndex: clampedIndex,
+    index: clampedIndex,
+    scrollRef,
     prev,
     next,
-    reset,
-    setIndex
+    reset: () => setHighlightedIndex(0),
+    setIndex: setHighlightedIndex
   };
 }

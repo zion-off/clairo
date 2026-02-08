@@ -32,7 +32,7 @@ export default function JiraView({ isFocused, onModalChange, onJiraStateChange, 
   const repo = useGitRepo();
   const jira = useJiraTickets();
   const modal = useModal<JiraModalType>();
-  const nav = useListNavigation(jira.tickets.length);
+  const nav = useListNavigation({ items: jira.tickets });
 
   // Track last initialized context to prevent re-initialization
   const lastInitRef = useRef<{ branch: string } | null>(null);
