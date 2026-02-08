@@ -4,9 +4,9 @@ import GitHubView from './components/github/GitHubView.js';
 import { JiraView } from './components/jira/index.js';
 import { LogsView } from './components/logs/index.js';
 import KeybindingsBar, { Keybinding } from './components/ui/KeybindingsBar.js';
+import { LogsFocusedBox } from './constants/logs.js';
 
 type FocusedView = 'github' | 'jira' | 'logs';
-type LogsFocusedBox = 'history' | 'viewer';
 
 export default function App() {
   const { exit } = useApp();
