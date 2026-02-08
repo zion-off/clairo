@@ -1,5 +1,42 @@
-import { LinkedTicket } from '../config/index.js';
+import { LinkedTicket, loadConfig } from '../config/index.js';
 import { getRepoConfig, updateRepoConfig } from '../github/config.js';
+
+export type ExistingJiraConfig = {
+  repoPath: string;
+  siteUrl: string;
+  email: string;
+  apiToken: string;
+};
+
+/**
+ * Get all existing Jira configurations from other repositories
+ */
+export function getExistingJiraConfigs(excludeRepoPath?: string): ExistingJiraConfig[] {
+  const config = loadConfig();
+  const repos = config.repositories ?? {};
+
+  const configs: ExistingJiraConfig[] = [];
+  const seen = new Set<string>();
+
+  for (const [repoPath, repoConfig] of Object.entries(repos)) {
+    if (repoPath === excludeRepoPath) continue;
+    if (!repoConfig.jiraSiteUrl || !repoConfig.jiraEmail || !repoConfig.jiraApiToken) continue;
+
+    // Deduplicate by site URL + email combo
+    const key = `${repoConfig.jiraSiteUrl}|${repoConfig.jiraEmail}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    configs.push({
+      repoPath,
+      siteUrl: repoConfig.jiraSiteUrl,
+      email: repoConfig.jiraEmail,
+      apiToken: repoConfig.jiraApiToken
+    });
+  }
+
+  return configs;
+}
 
 /**
  * Check if Jira is configured for a repository

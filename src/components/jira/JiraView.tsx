@@ -7,7 +7,12 @@ import { useGitRepo } from '../../hooks/github/index.js';
 import { useListNavigation, useModal } from '../../hooks/index.js';
 import { JiraState, useJiraTickets } from '../../hooks/jira/index.js';
 import { copyToClipboard } from '../../lib/clipboard.js';
-import { getJiraCredentials, getJiraSiteUrl, updateTicketStatus } from '../../lib/jira/index.js';
+import {
+  getExistingJiraConfigs,
+  getJiraCredentials,
+  getJiraSiteUrl,
+  updateTicketStatus
+} from '../../lib/jira/index.js';
 import { logJiraStatusChanged } from '../../lib/logs/logger.js';
 import ChangeStatusModal from './ChangeStatusModal.js';
 import ConfigureJiraSiteModal from './ConfigureJiraSiteModal.js';
@@ -154,12 +159,14 @@ export default function JiraView({ isFocused, onModalChange, onJiraStateChange, 
   if (modal.type === 'configure') {
     const siteUrl = repo.repoPath ? getJiraSiteUrl(repo.repoPath) : undefined;
     const creds = repo.repoPath ? getJiraCredentials(repo.repoPath) : { email: null, apiToken: null };
+    const existingConfigs = getExistingJiraConfigs(repo.repoPath ?? undefined);
 
     return (
       <Box flexDirection="column" flexShrink={0}>
         <ConfigureJiraSiteModal
           initialSiteUrl={siteUrl ?? undefined}
           initialEmail={creds.email ?? undefined}
+          existingConfigs={existingConfigs}
           onSubmit={handleConfigureSubmit}
           onCancel={() => {
             modal.close();
