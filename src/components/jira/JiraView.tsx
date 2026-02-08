@@ -6,9 +6,7 @@ import { copyToClipboard } from '../../lib/clipboard.js';
 import { getJiraCredentials, getJiraSiteUrl, updateTicketStatus } from '../../lib/jira/index.js';
 import { logJiraStatusChanged } from '../../lib/logs/logger.js';
 import { useGitRepo } from '../../hooks/github/index.js';
-import { useJiraTickets } from '../../hooks/jira/index.js';
-import { JIRA_KEYBINDINGS } from '../../constants/jira.js';
-import { Keybinding } from '../ui/KeybindingsBar.js';
+import { JiraState, useJiraTickets } from '../../hooks/jira/index.js';
 import ChangeStatusModal from './ChangeStatusModal.js';
 import ConfigureJiraSiteModal from './ConfigureJiraSiteModal.js';
 import LinkTicketModal from './LinkTicketModal.js';
@@ -23,11 +21,11 @@ type ModalState =
 type Props = {
   isFocused: boolean;
   onModalChange?: (isOpen: boolean) => void;
-  onKeybindingsChange?: (bindings: Keybinding[]) => void;
+  onJiraStateChange?: (state: JiraState) => void;
   onLogUpdated?: () => void;
 };
 
-export default function JiraView({ isFocused, onModalChange, onKeybindingsChange, onLogUpdated }: Props) {
+export default function JiraView({ isFocused, onModalChange, onJiraStateChange, onLogUpdated }: Props) {
   const repo = useGitRepo();
   const jira = useJiraTickets();
 
@@ -64,14 +62,10 @@ export default function JiraView({ isFocused, onModalChange, onKeybindingsChange
     onModalChange?.(modal.type !== 'none');
   }, [modal.type, onModalChange]);
 
-  // Update keybindings based on state
+  // Notify parent of jira state changes
   useEffect(() => {
-    if (!isFocused || modal.type !== 'none') {
-      onKeybindingsChange?.([]);
-      return;
-    }
-    onKeybindingsChange?.(JIRA_KEYBINDINGS[jira.jiraState]);
-  }, [isFocused, jira.jiraState, modal.type, onKeybindingsChange]);
+    onJiraStateChange?.(jira.jiraState);
+  }, [jira.jiraState, onJiraStateChange]);
 
   // Use ref pattern for callbacks with many dependencies
   const contextRef = useRef({ repo, jira, highlightedIndex, onLogUpdated });

@@ -1,1 +1,1 @@
-export { useJiraTickets } from './useJiraTickets.js';
+export { useJiraTickets, type JiraState } from './useJiraTickets.js';

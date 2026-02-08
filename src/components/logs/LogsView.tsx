@@ -1,26 +1,19 @@
 import { useEffect } from 'react';
 import { Box, useInput } from 'ink';
 import { useLogs } from '../../hooks/logs/index.js';
-import { LOGS_KEYBINDINGS, LogsFocusedBox } from '../../constants/logs.js';
-import { Keybinding } from '../ui/KeybindingsBar.js';
+import { LogsFocusedBox } from '../../constants/logs.js';
 import LogsHistoryBox from './LogsHistoryBox.js';
 import LogViewerBox from './LogViewerBox.js';
 
 type Props = {
   isFocused: boolean;
-  onKeybindingsChange?: (bindings: Keybinding[]) => void;
   refreshKey?: number;
   focusedBox: LogsFocusedBox;
   onFocusedBoxChange: (box: LogsFocusedBox) => void;
 };
 
-export default function LogsView({ isFocused, onKeybindingsChange, refreshKey, focusedBox, onFocusedBoxChange }: Props) {
+export default function LogsView({ isFocused, refreshKey, focusedBox, onFocusedBoxChange }: Props) {
   const logs = useLogs();
-
-  // Update keybindings based on focused box
-  useEffect(() => {
-    onKeybindingsChange?.(isFocused ? LOGS_KEYBINDINGS[focusedBox] : []);
-  }, [isFocused, focusedBox, onKeybindingsChange]);
 
   // React to external log updates (from other views logging actions)
   useEffect(() => {

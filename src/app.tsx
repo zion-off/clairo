@@ -1,20 +1,34 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Box, useApp, useInput } from 'ink';
 import GitHubView from './components/github/GitHubView.js';
 import { JiraView } from './components/jira/index.js';
 import { LogsView } from './components/logs/index.js';
-import KeybindingsBar, { Keybinding } from './components/ui/KeybindingsBar.js';
+import KeybindingsBar from './components/ui/KeybindingsBar.js';
+import { GitHubFocusedBox } from './constants/github.js';
 import { LogsFocusedBox } from './constants/logs.js';
-
-type FocusedView = 'github' | 'jira' | 'logs';
+import { computeKeybindings, FocusedView, JiraState } from './lib/keybindings.js';
 
 export default function App() {
   const { exit } = useApp();
   const [focusedView, setFocusedView] = useState<FocusedView>('github');
   const [modalOpen, setModalOpen] = useState(false);
-  const [contextBindings, setContextBindings] = useState<Keybinding[]>([]);
   const [logRefreshKey, setLogRefreshKey] = useState(0);
+
+  // View state for keybindings computation
+  const [githubFocusedBox, setGithubFocusedBox] = useState<GitHubFocusedBox>('remotes');
+  const [jiraState, setJiraState] = useState<JiraState>('not_configured');
   const [logsFocusedBox, setLogsFocusedBox] = useState<LogsFocusedBox>('history');
+
+  // Compute keybindings from view state
+  const keybindings = useMemo(
+    () =>
+      computeKeybindings(focusedView, {
+        github: { focusedBox: githubFocusedBox },
+        jira: { jiraState, modalOpen },
+        logs: { focusedBox: logsFocusedBox },
+      }),
+    [focusedView, githubFocusedBox, jiraState, modalOpen, logsFocusedBox]
+  );
 
   const handleLogUpdated = useCallback(() => {
     setLogRefreshKey((prev) => prev + 1);
@@ -49,27 +63,26 @@ export default function App() {
         <Box flexDirection="column" flexGrow={1} flexBasis={0}>
           <GitHubView
             isFocused={focusedView === 'github'}
-            onKeybindingsChange={focusedView === 'github' ? setContextBindings : undefined}
+            onFocusedBoxChange={setGithubFocusedBox}
             onLogUpdated={handleLogUpdated}
           />
           <JiraView
             isFocused={focusedView === 'jira'}
             onModalChange={setModalOpen}
-            onKeybindingsChange={focusedView === 'jira' ? setContextBindings : undefined}
+            onJiraStateChange={setJiraState}
             onLogUpdated={handleLogUpdated}
           />
         </Box>
         <Box flexDirection="column" flexGrow={1} flexBasis={0}>
           <LogsView
             isFocused={focusedView === 'logs'}
-            onKeybindingsChange={focusedView === 'logs' ? setContextBindings : undefined}
             refreshKey={logRefreshKey}
             focusedBox={logsFocusedBox}
             onFocusedBoxChange={setLogsFocusedBox}
           />
         </Box>
       </Box>
-      <KeybindingsBar contextBindings={contextBindings} modalOpen={modalOpen} />
+      <KeybindingsBar contextBindings={keybindings} modalOpen={modalOpen} />
     </Box>
   );
 }

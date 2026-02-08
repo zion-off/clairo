@@ -6,18 +6,18 @@ import { getRepoFromRemote, openPRCreationPage } from '../../lib/github/index.js
 import { getLinkedTickets } from '../../lib/jira/index.js';
 import { logPRCreated } from '../../lib/logs/logger.js';
 import { useGitRepo, usePRPolling, usePullRequests } from '../../hooks/github/index.js';
-import { GITHUB_KEYBINDINGS, GitHubFocusedBox } from '../../constants/github.js';
+import { GitHubFocusedBox } from '../../constants/github.js';
 import PRDetailsBox from './PRDetailsBox.js';
 import PullRequestsBox from './PullRequestsBox.js';
 import RemotesBox from './RemotesBox.js';
 
 type Props = {
   isFocused: boolean;
-  onKeybindingsChange?: (bindings: typeof GITHUB_KEYBINDINGS[GitHubFocusedBox]) => void;
+  onFocusedBoxChange?: (box: GitHubFocusedBox) => void;
   onLogUpdated?: () => void;
 };
 
-export default function GitHubView({ isFocused, onKeybindingsChange, onLogUpdated }: Props) {
+export default function GitHubView({ isFocused, onFocusedBoxChange, onLogUpdated }: Props) {
   const repo = useGitRepo();
   const pullRequests = usePullRequests();
   const polling = usePRPolling();
@@ -48,10 +48,10 @@ export default function GitHubView({ isFocused, onKeybindingsChange, onLogUpdate
     }
   }, [isFocused, repo.refreshBranch]);
 
-  // Update keybindings based on focused box
+  // Notify parent of focused box changes
   useEffect(() => {
-    onKeybindingsChange?.(isFocused ? GITHUB_KEYBINDINGS[focusedBox] : []);
-  }, [isFocused, focusedBox, onKeybindingsChange]);
+    onFocusedBoxChange?.(focusedBox);
+  }, [focusedBox, onFocusedBoxChange]);
 
   // Handle remote selection - direct user action, fetch immediately
   const handleRemoteSelect = useCallback(
