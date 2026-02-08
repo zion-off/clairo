@@ -1,282 +1,138 @@
-import { exec } from 'child_process';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { TitledBox } from '@mishieck/ink-titled-box';
 import { Box, Text, useInput } from 'ink';
-import { getSelectedRemote, updateRepoConfig } from '../../lib/github/config.js';
-import { GitRemote, findRemoteWithBranch, getCurrentBranch, getRepoRoot, isGitRepo, listRemotes } from '../../lib/github/git.js';
-import { PRDetails, PRListItem, getPRDetails, getRepoFromRemote, listPRsForBranch } from '../../lib/github/index.js';
+import { findRemoteWithBranch } from '../../lib/github/git.js';
+import { getRepoFromRemote, openPRCreationPage } from '../../lib/github/index.js';
 import { getLinkedTickets } from '../../lib/jira/index.js';
 import { logPRCreated } from '../../lib/logs/logger.js';
-import { Keybinding } from '../ui/KeybindingsBar.js';
+import { useGitRepo, usePRPolling, usePullRequests } from '../../hooks/github/index.js';
+import { GITHUB_KEYBINDINGS, GitHubFocusedBox } from '../../constants/github.js';
 import PRDetailsBox from './PRDetailsBox.js';
 import PullRequestsBox from './PullRequestsBox.js';
 import RemotesBox from './RemotesBox.js';
 
-type FocusedBox = 'remotes' | 'prs' | 'details';
-
 type Props = {
   isFocused: boolean;
-  onKeybindingsChange?: (bindings: Keybinding[]) => void;
+  onKeybindingsChange?: (bindings: typeof GITHUB_KEYBINDINGS[GitHubFocusedBox]) => void;
   onLogUpdated?: () => void;
 };
 
 export default function GitHubView({ isFocused, onKeybindingsChange, onLogUpdated }: Props) {
-  const [isRepo, setIsRepo] = useState<boolean | null>(null);
-  const [repoPath, setRepoPath] = useState<string | null>(null);
-  const [remotes, setRemotes] = useState<GitRemote[]>([]);
-  const [currentBranch, setCurrentBranch] = useState<string | null>(null);
-  const [currentRepoSlug, setCurrentRepoSlug] = useState<string | null>(null);
+  const repo = useGitRepo();
+  const pullRequests = usePullRequests();
+  const polling = usePRPolling();
 
-  const [selectedRemote, setSelectedRemote] = useState<string | null>(null);
-  const [selectedPR, setSelectedPR] = useState<PRListItem | null>(null);
+  const [focusedBox, setFocusedBox] = useState<GitHubFocusedBox>('remotes');
 
-  const [prs, setPrs] = useState<PRListItem[]>([]);
-  const [prDetails, setPrDetails] = useState<PRDetails | null>(null);
+  // Track last fetched context to detect changes
+  const lastFetchedRef = useRef<{ branch: string; repoSlug: string } | null>(null);
 
-  const [loading, setLoading] = useState({
-    remotes: true,
-    prs: false,
-    details: false
-  });
-  const [errors, setErrors] = useState<{
-    remotes?: string;
-    prs?: string;
-    details?: string;
-  }>({});
+  // Effect to fetch PRs when repo data is ready or branch/repoSlug changes
+  useEffect(() => {
+    if (repo.loading || !repo.currentBranch || !repo.currentRepoSlug) return;
 
-  const [focusedBox, setFocusedBox] = useState<FocusedBox>('remotes');
+    const current = { branch: repo.currentBranch, repoSlug: repo.currentRepoSlug };
+    const last = lastFetchedRef.current;
+
+    // Skip if we already fetched for this branch/repoSlug combo
+    if (last && last.branch === current.branch && last.repoSlug === current.repoSlug) return;
+
+    lastFetchedRef.current = current;
+    pullRequests.fetchPRsAndDetails(repo.currentBranch, repo.currentRepoSlug);
+  }, [repo.loading, repo.currentBranch, repo.currentRepoSlug, pullRequests.fetchPRsAndDetails]);
+
+  // Refresh branch when view gains focus (detect external branch switches)
+  useEffect(() => {
+    if (isFocused) {
+      repo.refreshBranch();
+    }
+  }, [isFocused, repo.refreshBranch]);
 
   // Update keybindings based on focused box
   useEffect(() => {
-    if (!isFocused) {
-      onKeybindingsChange?.([]);
-      return;
-    }
-
-    const bindings: Keybinding[] = [];
-
-    if (focusedBox === 'remotes') {
-      bindings.push({ key: 'Space', label: 'Select Remote' });
-    } else if (focusedBox === 'prs') {
-      bindings.push({ key: 'Space', label: 'Select' });
-      bindings.push({ key: 'n', label: 'New PR', color: 'green' });
-      bindings.push({ key: 'r', label: 'Refresh' });
-      bindings.push({ key: 'o', label: 'Open', color: 'green' });
-      bindings.push({ key: 'y', label: 'Copy Link' });
-    } else if (focusedBox === 'details') {
-      bindings.push({ key: 'r', label: 'Refresh' });
-      bindings.push({ key: 'o', label: 'Open', color: 'green' });
-    }
-
-    onKeybindingsChange?.(bindings);
+    onKeybindingsChange?.(isFocused ? GITHUB_KEYBINDINGS[focusedBox] : []);
   }, [isFocused, focusedBox, onKeybindingsChange]);
 
-  useEffect(() => {
-    const gitRepoCheck = isGitRepo();
-    setIsRepo(gitRepoCheck);
-
-    if (!gitRepoCheck) {
-      setLoading((prev) => ({ ...prev, remotes: false }));
-      setErrors((prev) => ({ ...prev, remotes: 'Not a git repository' }));
-      return;
-    }
-
-    const rootResult = getRepoRoot();
-    if (rootResult.success) {
-      setRepoPath(rootResult.data);
-    }
-
-    const branchResult = getCurrentBranch();
-    if (branchResult.success) {
-      setCurrentBranch(branchResult.data);
-    }
-
-    const remotesResult = listRemotes();
-    if (remotesResult.success) {
-      setRemotes(remotesResult.data);
-      const remoteNames = remotesResult.data.map((r) => r.name);
-      const defaultRemote = getSelectedRemote(rootResult.success ? rootResult.data : '', remoteNames);
-      setSelectedRemote(defaultRemote);
-    } else {
-      setErrors((prev) => ({ ...prev, remotes: remotesResult.error }));
-    }
-
-    setLoading((prev) => ({ ...prev, remotes: false }));
-  }, []);
-
-  const refreshPRs = useCallback(async () => {
-    if (!currentBranch || !currentRepoSlug) return;
-
-    setLoading((prev) => ({ ...prev, prs: true }));
-
-    try {
-      const result = await listPRsForBranch(currentBranch, currentRepoSlug);
-      if (result.success) {
-        setPrs(result.data);
-        // Auto-select first PR if none selected
-        if (result.data.length > 0) {
-          setSelectedPR((prev) => prev ?? result.data[0]);
-        }
-        setErrors((prev) => ({ ...prev, prs: undefined }));
-      } else {
-        setErrors((prev) => ({ ...prev, prs: result.error }));
-      }
-    } catch (err) {
-      setErrors((prev) => ({ ...prev, prs: String(err) }));
-    } finally {
-      setLoading((prev) => ({ ...prev, prs: false }));
-    }
-  }, [currentBranch, currentRepoSlug]);
-
-  const refreshDetails = useCallback(async () => {
-    if (!selectedPR || !currentRepoSlug) return;
-
-    setLoading((prev) => ({ ...prev, details: true }));
-
-    try {
-      const result = await getPRDetails(selectedPR.number, currentRepoSlug);
-      if (result.success) {
-        setPrDetails(result.data);
-        setErrors((prev) => ({ ...prev, details: undefined }));
-      } else {
-        setErrors((prev) => ({ ...prev, details: result.error }));
-      }
-    } catch (err) {
-      setErrors((prev) => ({ ...prev, details: String(err) }));
-    } finally {
-      setLoading((prev) => ({ ...prev, details: false }));
-    }
-  }, [selectedPR, currentRepoSlug]);
-
-  useEffect(() => {
-    if (!selectedRemote || !currentBranch) return;
-
-    const remote = remotes.find((r) => r.name === selectedRemote);
-    if (!remote) return;
-
-    const repo = getRepoFromRemote(remote.url);
-    if (!repo) return;
-
-    setCurrentRepoSlug(repo);
-    setPrs([]);
-    setSelectedPR(null);
-  }, [selectedRemote, currentBranch, remotes]);
-
-  useEffect(() => {
-    if (currentRepoSlug && currentBranch) {
-      refreshPRs();
-    }
-  }, [currentRepoSlug, currentBranch, refreshPRs]);
-
-  useEffect(() => {
-    if (!selectedPR || !currentRepoSlug) {
-      setPrDetails(null);
-      return;
-    }
-    refreshDetails();
-  }, [selectedPR, currentRepoSlug, refreshDetails]);
-
+  // Handle remote selection - direct user action, fetch immediately
   const handleRemoteSelect = useCallback(
     (remoteName: string) => {
-      setSelectedRemote(remoteName);
-      if (repoPath) {
-        updateRepoConfig(repoPath, { selectedRemote: remoteName });
-      }
+      repo.selectRemote(remoteName);
+
+      // Compute repoSlug and fetch immediately (don't wait for effect)
+      const remote = repo.remotes.find((r) => r.name === remoteName);
+      if (!remote || !repo.currentBranch) return;
+
+      const repoSlug = getRepoFromRemote(remote.url);
+      if (!repoSlug) return;
+
+      // Update lastFetchedRef to prevent effect from double-fetching
+      lastFetchedRef.current = { branch: repo.currentBranch, repoSlug };
+      pullRequests.fetchPRsAndDetails(repo.currentBranch, repoSlug);
     },
-    [repoPath]
+    [repo.selectRemote, repo.remotes, repo.currentBranch, pullRequests.fetchPRsAndDetails]
   );
 
-  const handlePRSelect = useCallback((pr: PRListItem) => {
-    setSelectedPR(pr);
-  }, []);
+  // Handle PR selection
+  const handlePRSelect = useCallback(
+    (pr: Parameters<typeof pullRequests.selectPR>[0]) => {
+      pullRequests.selectPR(pr, repo.currentRepoSlug);
+    },
+    [pullRequests.selectPR, repo.currentRepoSlug]
+  );
 
-  // Track PR numbers before creating a new PR
-  const prNumbersBeforeCreate = useRef<Set<number>>(new Set());
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  // Store latest values in ref to avoid huge dependency array
+  const createPRContext = useRef({ repo, pullRequests, onLogUpdated });
+  createPRContext.current = { repo, pullRequests, onLogUpdated };
 
   const handleCreatePR = useCallback(() => {
-    if (!currentBranch) {
-      setErrors((prev) => ({ ...prev, prs: 'No branch detected' }));
+    const { repo, pullRequests } = createPRContext.current;
+
+    if (!repo.currentBranch) {
+      pullRequests.setError('prs', 'No branch detected');
       return;
     }
 
     // Find which remote has the branch pushed
-    const remoteResult = findRemoteWithBranch(currentBranch);
+    const remoteResult = findRemoteWithBranch(repo.currentBranch);
     if (!remoteResult.success) {
-      setErrors((prev) => ({ ...prev, prs: 'Push your branch to a remote first' }));
+      pullRequests.setError('prs', 'Push your branch to a remote first');
       return;
     }
 
-    // Store current PR numbers before opening browser
-    prNumbersBeforeCreate.current = new Set(prs.map((pr) => pr.number));
-
-    // Open GitHub PR creation page in browser using gh CLI with --head flag for forks
-    const headFlag = `${remoteResult.data.owner}:${currentBranch}`;
-    exec(`gh pr create --web --head "${headFlag}"`, (error) => {
-      // Emit resize to refresh TUI after returning from browser
-      process.stdout.emit('resize');
+    // Open GitHub PR creation page in browser
+    openPRCreationPage(remoteResult.data.owner, repo.currentBranch, (error) => {
       if (error) {
-        setErrors((prev) => ({ ...prev, prs: `Failed to create PR: ${error.message}` }));
+        pullRequests.setError('prs', `Failed to create PR: ${error.message}`);
       }
     });
 
-    // Start polling for new PRs (every 3 seconds, up to 2 minutes)
-    if (!currentRepoSlug) return;
+    // Start polling for new PRs
+    if (!repo.currentRepoSlug) return;
 
-    let attempts = 0;
-    const maxAttempts = 24; // 24 * 5 seconds = 2 minutes
-    const pollInterval = 5000;
+    polling.startPolling({
+      branch: repo.currentBranch,
+      repoSlug: repo.currentRepoSlug,
+      existingPRNumbers: pullRequests.prs.map((pr) => pr.number),
+      onPRsUpdated: (prs) => {
+        pullRequests.setPrs(prs);
+      },
+      onNewPR: (newPR) => {
+        const ctx = createPRContext.current;
+        // Get linked Jira tickets for logging
+        const tickets = ctx.repo.repoPath && ctx.repo.currentBranch
+          ? getLinkedTickets(ctx.repo.repoPath, ctx.repo.currentBranch).map((t) => t.key)
+          : [];
 
-    // Clear any existing polling
-    if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
-    }
-
-    pollingIntervalRef.current = setInterval(async () => {
-      attempts++;
-
-      if (attempts > maxAttempts) {
-        if (pollingIntervalRef.current) {
-          clearInterval(pollingIntervalRef.current);
-          pollingIntervalRef.current = null;
-        }
-        return;
-      }
-
-      const result = await listPRsForBranch(currentBranch, currentRepoSlug);
-      if (result.success) {
-        setPrs(result.data);
-
-        // Find newly created PR
-        const newPR = result.data.find((pr) => !prNumbersBeforeCreate.current.has(pr.number));
-        if (newPR) {
-          // Stop polling - we found the new PR
-          if (pollingIntervalRef.current) {
-            clearInterval(pollingIntervalRef.current);
-            pollingIntervalRef.current = null;
-          }
-
-          // Get linked Jira tickets for logging
-          const tickets = repoPath && currentBranch
-            ? getLinkedTickets(repoPath, currentBranch).map((t) => t.key)
-            : [];
-
-          logPRCreated(newPR.number, newPR.title, tickets);
-          onLogUpdated?.();
-          setSelectedPR(newPR);
+        logPRCreated(newPR.number, newPR.title, tickets);
+        ctx.onLogUpdated?.();
+        ctx.pullRequests.setSelectedPR(newPR);
+        // Fetch details for the new PR
+        if (ctx.repo.currentRepoSlug) {
+          ctx.pullRequests.refreshDetails(newPR, ctx.repo.currentRepoSlug);
         }
       }
-    }, pollInterval);
-  }, [prs, currentBranch, currentRepoSlug, repoPath, onLogUpdated]);
-
-  // Cleanup polling on unmount
-  useEffect(() => {
-    return () => {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-      }
-    };
-  }, []);
+    });
+  }, [polling.startPolling]);
 
   useInput(
     (input) => {
@@ -284,8 +140,14 @@ export default function GitHubView({ isFocused, onKeybindingsChange, onLogUpdate
       if (input === '2') setFocusedBox('prs');
       if (input === '3') setFocusedBox('details');
       if (input === 'r') {
-        if (focusedBox === 'prs') refreshPRs();
-        if (focusedBox === 'details') refreshDetails();
+        // Refresh branch first to detect external switches
+        const freshBranch = repo.refreshBranch() ?? repo.currentBranch;
+        if (focusedBox === 'prs' && freshBranch && repo.currentRepoSlug) {
+          pullRequests.fetchPRsAndDetails(freshBranch, repo.currentRepoSlug);
+        }
+        if (focusedBox === 'details' && pullRequests.selectedPR && repo.currentRepoSlug) {
+          pullRequests.refreshDetails(pullRequests.selectedPR, repo.currentRepoSlug);
+        }
       }
       if (input === 'n' && focusedBox === 'prs') {
         handleCreatePR();
@@ -294,7 +156,7 @@ export default function GitHubView({ isFocused, onKeybindingsChange, onLogUpdate
     { isActive: isFocused }
   );
 
-  if (isRepo === false) {
+  if (repo.isRepo === false) {
     return (
       <TitledBox borderStyle="round" titles={['Error']} flexGrow={1}>
         <Text color="red">Current directory is not a git repository</Text>
@@ -305,28 +167,28 @@ export default function GitHubView({ isFocused, onKeybindingsChange, onLogUpdate
   return (
     <Box flexDirection="column" flexGrow={1}>
       <RemotesBox
-        remotes={remotes}
-        selectedRemote={selectedRemote}
+        remotes={repo.remotes}
+        selectedRemote={repo.selectedRemote}
         onSelect={handleRemoteSelect}
-        loading={loading.remotes}
-        error={errors.remotes}
+        loading={repo.loading}
+        error={repo.error}
         isFocused={isFocused && focusedBox === 'remotes'}
       />
       <PullRequestsBox
-        prs={prs}
-        selectedPR={selectedPR}
+        prs={pullRequests.prs}
+        selectedPR={pullRequests.selectedPR}
         onSelect={handlePRSelect}
         onCreatePR={handleCreatePR}
-        loading={loading.prs}
-        error={errors.prs}
-        branch={currentBranch}
-        repoSlug={currentRepoSlug}
+        loading={pullRequests.loading.prs}
+        error={pullRequests.errors.prs}
+        branch={repo.currentBranch}
+        repoSlug={repo.currentRepoSlug}
         isFocused={isFocused && focusedBox === 'prs'}
       />
       <PRDetailsBox
-        pr={prDetails}
-        loading={loading.details}
-        error={errors.details}
+        pr={pullRequests.prDetails}
+        loading={pullRequests.loading.details}
+        error={pullRequests.errors.details}
         isFocused={isFocused && focusedBox === 'details'}
       />
     </Box>

@@ -209,6 +209,23 @@ export async function getPRDetails(
 }
 
 /**
+ * Open PR creation page in browser
+ * Returns a promise that resolves when the browser command completes
+ */
+export function openPRCreationPage(
+  owner: string,
+  branch: string,
+  onComplete?: (error: Error | null) => void
+): void {
+  const headFlag = `${owner}:${branch}`;
+  exec(`gh pr create --web --head "${headFlag}"`, (error) => {
+    // Emit resize to refresh TUI after returning from browser
+    process.stdout.emit('resize');
+    onComplete?.(error);
+  });
+}
+
+/**
  * Get the default branch for a repo
  */
 export async function getDefaultBranch(repo: string): Promise<GitHubResult<string>> {
