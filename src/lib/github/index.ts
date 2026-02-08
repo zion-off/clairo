@@ -27,6 +27,8 @@ export type StatusCheck = {
   status?: string;
   conclusion?: string;
   state?: string;
+  startedAt?: string;
+  workflowName?: string;
 };
 
 export type PRDetails = {

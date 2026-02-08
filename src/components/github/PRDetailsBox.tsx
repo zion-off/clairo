@@ -44,6 +44,25 @@ function getCheckIcon(check: StatusCheck): string {
   return '?';
 }
 
+function getCheckSortOrder(check: StatusCheck): number {
+  const conclusion = check.conclusion ?? check.state;
+  // Failed first
+  if (conclusion === 'FAILURE' || conclusion === 'ERROR') return 0;
+  // Then in-progress/pending
+  if (
+    conclusion === 'PENDING' ||
+    check.status === 'IN_PROGRESS' ||
+    check.status === 'QUEUED' ||
+    check.status === 'WAITING'
+  )
+    return 1;
+  // Then skipped
+  if (conclusion === 'SKIPPED' || conclusion === 'NEUTRAL') return 2;
+  // Then passed
+  if (conclusion === 'SUCCESS' || check.status === 'COMPLETED') return 3;
+  return 4;
+}
+
 export default function PRDetailsBox({ pr, loading, error, isFocused }: Props) {
   const scrollRef = useRef<ScrollViewRef>(null);
 
@@ -171,12 +190,30 @@ export default function PRDetailsBox({ pr, loading, error, isFocused }: Props) {
                 {(pr.statusCheckRollup?.length ?? 0) > 0 && (
                   <Box marginTop={1} flexDirection="column">
                     <Text dimColor>Checks:</Text>
-                    {pr.statusCheckRollup?.map((check, idx) => (
-                      <Text key={idx} color={getCheckColor(check)}>
-                        {'  '}
-                        {getCheckIcon(check)} {check.name ?? check.context}
-                      </Text>
-                    ))}
+                    {Array.from(
+                      pr.statusCheckRollup
+                        ?.reduce((acc, check) => {
+                          const key = check.name ?? check.context ?? '';
+                          const existing = acc.get(key);
+                          // Keep the most recent run (by startedAt) for each check name
+                          if (!existing || (check.startedAt ?? '') > (existing.startedAt ?? '')) {
+                            acc.set(key, check);
+                          }
+                          return acc;
+                        }, new Map<string, StatusCheck>())
+                        .values() ?? []
+                    )
+                      .sort((a, b) => getCheckSortOrder(a) - getCheckSortOrder(b))
+                      .map((check, idx) => {
+                        const jobName = check.name ?? check.context;
+                        const displayName = check.workflowName ? `${check.workflowName} / ${jobName}` : jobName;
+                        return (
+                          <Text key={idx} color={getCheckColor(check)}>
+                            {'  '}
+                            {getCheckIcon(check)} {displayName}
+                          </Text>
+                        );
+                      })}
                   </Box>
                 )}
 
