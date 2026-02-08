@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import open from 'open';
 import { TitledBox } from '@mishieck/ink-titled-box';
 import { Box, Text, useInput } from 'ink';
@@ -7,16 +7,13 @@ import { getJiraCredentials, getJiraSiteUrl, updateTicketStatus } from '../../li
 import { logJiraStatusChanged } from '../../lib/logs/logger.js';
 import { useGitRepo } from '../../hooks/github/index.js';
 import { JiraState, useJiraTickets } from '../../hooks/jira/index.js';
+import { useListNavigation, useModal } from '../../hooks/index.js';
 import ChangeStatusModal from './ChangeStatusModal.js';
 import ConfigureJiraSiteModal from './ConfigureJiraSiteModal.js';
 import LinkTicketModal from './LinkTicketModal.js';
 import TicketItem from './TicketItem.js';
 
-type ModalState =
-  | { type: 'none' }
-  | { type: 'configure' }
-  | { type: 'link' }
-  | { type: 'status' };
+type JiraModalType = 'configure' | 'link' | 'status';
 
 type Props = {
   isFocused: boolean;
@@ -28,9 +25,8 @@ type Props = {
 export default function JiraView({ isFocused, onModalChange, onJiraStateChange, onLogUpdated }: Props) {
   const repo = useGitRepo();
   const jira = useJiraTickets();
-
-  const [modal, setModal] = useState<ModalState>({ type: 'none' });
-  const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const modal = useModal<JiraModalType>();
+  const nav = useListNavigation(jira.tickets.length);
 
   // Track last initialized context to prevent re-initialization
   const lastInitRef = useRef<{ branch: string } | null>(null);
@@ -48,126 +44,101 @@ export default function JiraView({ isFocused, onModalChange, onJiraStateChange, 
     jira.initializeJiraState(repo.repoPath, repo.currentBranch, repo.currentRepoSlug);
   }, [repo.loading, repo.repoPath, repo.currentBranch, repo.currentRepoSlug, jira.initializeJiraState]);
 
-  // When focus is gained, refresh branch to detect external changes
+  // When focus is gained, refresh branch; when lost, close modal
   useEffect(() => {
     if (isFocused) {
       repo.refreshBranch();
     } else {
-      setModal({ type: 'none' });
+      modal.close();
     }
-  }, [isFocused, repo.refreshBranch]);
+  }, [isFocused, repo.refreshBranch, modal.close]);
 
   // Notify parent when modal state changes
   useEffect(() => {
-    onModalChange?.(modal.type !== 'none');
-  }, [modal.type, onModalChange]);
+    onModalChange?.(modal.isOpen);
+  }, [modal.isOpen, onModalChange]);
 
   // Notify parent of jira state changes
   useEffect(() => {
     onJiraStateChange?.(jira.jiraState);
   }, [jira.jiraState, onJiraStateChange]);
 
-  // Use ref pattern for callbacks with many dependencies
-  const contextRef = useRef({ repo, jira, highlightedIndex, onLogUpdated });
-  contextRef.current = { repo, jira, highlightedIndex, onLogUpdated };
-
-  const handleConfigureSubmit = useCallback(
-    async (siteUrl: string, email: string, apiToken: string) => {
-      const { repo } = contextRef.current;
-      if (!repo.repoPath) return;
-
-      const success = await jira.configureJira(repo.repoPath, siteUrl, email, apiToken);
-      if (success) {
-        setModal({ type: 'none' });
-      }
-    },
-    [jira.configureJira]
-  );
-
-  const handleLinkSubmit = useCallback(
-    async (ticketInput: string) => {
-      const { repo } = contextRef.current;
-      if (!repo.repoPath || !repo.currentBranch) return;
-
-      const success = await jira.linkTicket(repo.repoPath, repo.currentBranch, ticketInput);
-      if (success) {
-        setModal({ type: 'none' });
-      }
-    },
-    [jira.linkTicket]
-  );
-
-  const handleUnlinkTicket = useCallback(() => {
-    const { repo, jira: j, highlightedIndex: idx } = contextRef.current;
-    if (!repo.repoPath || !repo.currentBranch || j.tickets.length === 0) return;
-
-    const ticket = j.tickets[idx];
-    if (ticket) {
-      j.unlinkTicket(repo.repoPath, repo.currentBranch, ticket.key);
-      j.refreshTickets(repo.repoPath, repo.currentBranch);
-      setHighlightedIndex((prev) => Math.max(0, prev - 1));
-    }
-  }, []);
-
-  const handleOpenInBrowser = useCallback(() => {
-    const { repo, jira: j, highlightedIndex: idx } = contextRef.current;
-    if (!repo.repoPath || j.tickets.length === 0) return;
-
-    const ticket = j.tickets[idx];
-    const siteUrl = getJiraSiteUrl(repo.repoPath);
-    if (ticket && siteUrl) {
-      const url = `${siteUrl}/browse/${ticket.key}`;
-      open(url).catch(() => {});
-    }
-  }, []);
-
-  const handleCopyLink = useCallback(() => {
-    const { repo, jira: j, highlightedIndex: idx } = contextRef.current;
+  // Handlers - simple enough to stay in component
+  const handleConfigureSubmit = async (siteUrl: string, email: string, apiToken: string) => {
     if (!repo.repoPath) return;
+    const success = await jira.configureJira(repo.repoPath, siteUrl, email, apiToken);
+    if (success) modal.close();
+  };
 
-    const ticket = j.tickets[idx];
+  const handleLinkSubmit = async (ticketInput: string) => {
+    if (!repo.repoPath || !repo.currentBranch) return;
+    const success = await jira.linkTicket(repo.repoPath, repo.currentBranch, ticketInput);
+    if (success) modal.close();
+  };
+
+  const handleUnlinkTicket = () => {
+    if (!repo.repoPath || !repo.currentBranch || jira.tickets.length === 0) return;
+    const ticket = jira.tickets[nav.index];
+    if (ticket) {
+      jira.unlinkTicket(repo.repoPath, repo.currentBranch, ticket.key);
+      jira.refreshTickets(repo.repoPath, repo.currentBranch);
+      nav.prev();
+    }
+  };
+
+  const handleOpenInBrowser = () => {
+    if (!repo.repoPath || jira.tickets.length === 0) return;
+    const ticket = jira.tickets[nav.index];
     const siteUrl = getJiraSiteUrl(repo.repoPath);
     if (ticket && siteUrl) {
-      const url = `${siteUrl}/browse/${ticket.key}`;
-      copyToClipboard(url);
+      open(`${siteUrl}/browse/${ticket.key}`).catch(() => {});
     }
-  }, []);
+  };
+
+  const handleCopyLink = () => {
+    if (!repo.repoPath || jira.tickets.length === 0) return;
+    const ticket = jira.tickets[nav.index];
+    const siteUrl = getJiraSiteUrl(repo.repoPath);
+    if (ticket && siteUrl) {
+      copyToClipboard(`${siteUrl}/browse/${ticket.key}`);
+    }
+  };
+
+  const handleStatusComplete = (newStatus: string) => {
+    if (!repo.repoPath || !repo.currentBranch) return;
+    const ticket = jira.tickets[nav.index];
+    if (!ticket) return;
+
+    updateTicketStatus(repo.repoPath, repo.currentBranch, ticket.key, newStatus);
+    logJiraStatusChanged(ticket.key, ticket.summary, ticket.status, newStatus);
+    onLogUpdated?.();
+    modal.close();
+    jira.refreshTickets(repo.repoPath, repo.currentBranch);
+  };
 
   // Keyboard navigation
   useInput(
     (input, key) => {
       if (input === 'c' && jira.jiraState === 'not_configured') {
-        setModal({ type: 'configure' });
+        modal.open('configure');
         return;
       }
 
       if (input === 'l' && jira.jiraState !== 'not_configured') {
-        setModal({ type: 'link' });
+        modal.open('link');
         return;
       }
 
       if (jira.jiraState === 'has_tickets') {
-        if (key.upArrow || input === 'k') {
-          setHighlightedIndex((prev) => Math.max(0, prev - 1));
-        }
-        if (key.downArrow || input === 'j') {
-          setHighlightedIndex((prev) => Math.min(jira.tickets.length - 1, prev + 1));
-        }
-        if (input === 's') {
-          setModal({ type: 'status' });
-        }
-        if (input === 'd') {
-          handleUnlinkTicket();
-        }
-        if (input === 'o') {
-          handleOpenInBrowser();
-        }
-        if (input === 'y') {
-          handleCopyLink();
-        }
+        if (key.upArrow || input === 'k') nav.prev();
+        if (key.downArrow || input === 'j') nav.next();
+        if (input === 's') modal.open('status');
+        if (input === 'd') handleUnlinkTicket();
+        if (input === 'o') handleOpenInBrowser();
+        if (input === 'y') handleCopyLink();
       }
     },
-    { isActive: isFocused && modal.type === 'none' }
+    { isActive: isFocused && !modal.isOpen }
   );
 
   // Early return for non-git repo
@@ -191,7 +162,7 @@ export default function JiraView({ isFocused, onModalChange, onJiraStateChange, 
           initialEmail={creds.email ?? undefined}
           onSubmit={handleConfigureSubmit}
           onCancel={() => {
-            setModal({ type: 'none' });
+            modal.close();
             jira.clearError('configure');
           }}
           loading={jira.loading.configure}
@@ -207,7 +178,7 @@ export default function JiraView({ isFocused, onModalChange, onJiraStateChange, 
         <LinkTicketModal
           onSubmit={handleLinkSubmit}
           onCancel={() => {
-            setModal({ type: 'none' });
+            modal.close();
             jira.clearError('link');
           }}
           loading={jira.loading.link}
@@ -217,23 +188,16 @@ export default function JiraView({ isFocused, onModalChange, onJiraStateChange, 
     );
   }
 
-  if (modal.type === 'status' && repo.repoPath && repo.currentBranch && jira.tickets[highlightedIndex]) {
-    const ticket = jira.tickets[highlightedIndex];
+  if (modal.type === 'status' && repo.repoPath && repo.currentBranch && jira.tickets[nav.index]) {
+    const ticket = jira.tickets[nav.index];
     return (
       <Box flexDirection="column" flexShrink={0}>
         <ChangeStatusModal
           repoPath={repo.repoPath}
           ticketKey={ticket.key}
           currentStatus={ticket.status}
-          onComplete={(newStatus) => {
-            const oldStatus = ticket.status;
-            updateTicketStatus(repo.repoPath!, repo.currentBranch!, ticket.key, newStatus);
-            logJiraStatusChanged(ticket.key, ticket.summary, oldStatus, newStatus);
-            onLogUpdated?.();
-            setModal({ type: 'none' });
-            jira.refreshTickets(repo.repoPath!, repo.currentBranch!);
-          }}
-          onCancel={() => setModal({ type: 'none' })}
+          onComplete={handleStatusComplete}
+          onCancel={modal.close}
         />
       </Box>
     );
@@ -257,7 +221,7 @@ export default function JiraView({ isFocused, onModalChange, onJiraStateChange, 
               ticketKey={ticket.key}
               summary={ticket.summary}
               status={ticket.status}
-              isHighlighted={idx === highlightedIndex}
+              isHighlighted={idx === nav.index}
             />
           ))}
       </Box>
