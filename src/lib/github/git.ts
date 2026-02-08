@@ -85,3 +85,40 @@ export function getCurrentBranch(): GitResult<string> {
     return { success: false, error: 'Failed to get current branch' };
   }
 }
+
+/**
+ * Find which remote has the given branch pushed, and return the owner
+ */
+export function findRemoteWithBranch(branch: string): GitResult<{ remote: string; owner: string }> {
+  try {
+    const remoteBranches = execSync('git branch -r', {
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+
+    const remotes = listRemotes();
+    if (!remotes.success) {
+      return { success: false, error: 'Failed to list remotes' };
+    }
+
+    for (const remote of remotes.data) {
+      if (remoteBranches.includes(`${remote.name}/${branch}`)) {
+        // Extract owner from remote URL
+        // SSH: git@github.com:owner/repo.git
+        const sshMatch = remote.url.match(/git@github\.com:(.+?)\/(.+?)(?:\.git)?$/);
+        if (sshMatch) {
+          return { success: true, data: { remote: remote.name, owner: sshMatch[1] } };
+        }
+        // HTTPS: https://github.com/owner/repo.git
+        const httpsMatch = remote.url.match(/https:\/\/github\.com\/(.+?)\/(.+?)(?:\.git)?$/);
+        if (httpsMatch) {
+          return { success: true, data: { remote: remote.name, owner: httpsMatch[1] } };
+        }
+      }
+    }
+
+    return { success: false, error: 'Branch not found on any remote' };
+  } catch {
+    return { success: false, error: 'Failed to find remote with branch' };
+  }
+}

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { TitledBox } from '@mishieck/ink-titled-box';
 import { Box, Text, useInput } from 'ink';
 import { getSelectedRemote, updateRepoConfig } from '../../lib/github/config.js';
-import { GitRemote, getCurrentBranch, getRepoRoot, isGitRepo, listRemotes } from '../../lib/github/git.js';
+import { GitRemote, findRemoteWithBranch, getCurrentBranch, getRepoRoot, isGitRepo, listRemotes } from '../../lib/github/git.js';
 import { PRDetails, PRListItem, getPRDetails, getRepoFromRemote, listPRsForBranch } from '../../lib/github/index.js';
 import { getLinkedTickets } from '../../lib/jira/index.js';
 import { logPRCreated } from '../../lib/logs/logger.js';
@@ -194,17 +194,33 @@ export default function GitHubView({ isFocused, onKeybindingsChange, onLogUpdate
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleCreatePR = useCallback(() => {
+    if (!currentBranch) {
+      setErrors((prev) => ({ ...prev, prs: 'No branch detected' }));
+      return;
+    }
+
+    // Find which remote has the branch pushed
+    const remoteResult = findRemoteWithBranch(currentBranch);
+    if (!remoteResult.success) {
+      setErrors((prev) => ({ ...prev, prs: 'Push your branch to a remote first' }));
+      return;
+    }
+
     // Store current PR numbers before opening browser
     prNumbersBeforeCreate.current = new Set(prs.map((pr) => pr.number));
 
-    // Open GitHub PR creation page in browser using gh CLI
-    exec('gh pr create --web', () => {
+    // Open GitHub PR creation page in browser using gh CLI with --head flag for forks
+    const headFlag = `${remoteResult.data.owner}:${currentBranch}`;
+    exec(`gh pr create --web --head "${headFlag}"`, (error) => {
       // Emit resize to refresh TUI after returning from browser
       process.stdout.emit('resize');
+      if (error) {
+        setErrors((prev) => ({ ...prev, prs: `Failed to create PR: ${error.message}` }));
+      }
     });
 
     // Start polling for new PRs (every 3 seconds, up to 2 minutes)
-    if (!currentBranch || !currentRepoSlug) return;
+    if (!currentRepoSlug) return;
 
     let attempts = 0;
     const maxAttempts = 24; // 24 * 5 seconds = 2 minutes
@@ -269,6 +285,9 @@ export default function GitHubView({ isFocused, onKeybindingsChange, onLogUpdate
       if (input === 'r') {
         if (focusedBox === 'prs') refreshPRs();
         if (focusedBox === 'details') refreshDetails();
+      }
+      if (input === 'n' && focusedBox === 'prs') {
+        handleCreatePR();
       }
     },
     { isActive: isFocused }
