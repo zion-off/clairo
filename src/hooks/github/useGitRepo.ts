@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getSelectedRemote, updateRepoConfig } from '../../lib/github/config.js';
 import { GitRemote, getCurrentBranch, getRepoRoot, isGitRepo, listRemotes } from '../../lib/github/git.js';
 import { getRepoFromRemote } from '../../lib/github/index.js';
+import { useTerminalFocus } from '../useTerminalFocus.js';
 
 export function useGitRepo() {
   const [isRepo, setIsRepo] = useState<boolean | null>(null);
@@ -11,6 +12,8 @@ export function useGitRepo() {
   const [selectedRemote, setSelectedRemote] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>(undefined);
+
+  const { focusCount } = useTerminalFocus();
 
   // Derive currentRepoSlug from selectedRemote and remotes
   const currentRepoSlug = useMemo(() => {
@@ -55,19 +58,15 @@ export function useGitRepo() {
     setLoading(false);
   }, []);
 
-  // Poll for branch changes (detect external branch switches)
+  // Refresh branch when terminal window gains focus
   useEffect(() => {
-    if (!isRepo) return;
+    if (!isRepo || focusCount === 0) return;
 
-    const interval = setInterval(() => {
-      const result = getCurrentBranch();
-      if (result.success && result.data !== currentBranch) {
-        setCurrentBranch(result.data);
-      }
-    }, 10000); // 10 seconds, same as lazygit
-
-    return () => clearInterval(interval);
-  }, [isRepo, currentBranch]);
+    const result = getCurrentBranch();
+    if (result.success && result.data !== currentBranch) {
+      setCurrentBranch(result.data);
+    }
+  }, [isRepo, focusCount]);
 
   const selectRemote = useCallback(
     (remoteName: string) => {
