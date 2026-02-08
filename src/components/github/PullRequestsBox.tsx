@@ -1,3 +1,4 @@
+import open from 'open';
 import { useEffect, useState } from 'react';
 import { TitledBox } from '@mishieck/ink-titled-box';
 import { Box, Text, useInput } from 'ink';
@@ -62,6 +63,11 @@ export default function PullRequestsBox({
         copyToClipboard(url);
         setCopied(true);
         setTimeout(() => setCopied(false), 1500);
+      }
+      if (input === 'o' && repoSlug && prs[highlightedIndex]) {
+        const pr = prs[highlightedIndex];
+        const url = `https://github.com/${repoSlug}/pull/${pr.number}`;
+        open(url).catch(() => {});
       }
     },
     { isActive: isFocused }
