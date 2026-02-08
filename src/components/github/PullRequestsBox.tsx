@@ -89,9 +89,9 @@ export default function PullRequestsBox({
                 </Box>
               );
             })}
-            <Text color="blue">{isFocused && highlightedIndex === prs.length ? '> ' : '  '}+ Create new PR</Text>
           </>
         )}
+        <Text color="blue">{isFocused && highlightedIndex === prs.length ? '> ' : '  '}+ Create new PR</Text>
       </Box>
     </TitledBox>
   );
