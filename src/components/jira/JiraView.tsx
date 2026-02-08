@@ -8,6 +8,7 @@ import { useListNavigation, useModal } from '../../hooks/index.js';
 import { JiraState, useJiraTickets } from '../../hooks/jira/index.js';
 import { copyToClipboard } from '../../lib/clipboard.js';
 import {
+  clearJiraConfig,
   getExistingJiraConfigs,
   getJiraCredentials,
   getJiraSiteUrl,
@@ -121,6 +122,12 @@ export default function JiraView({ isFocused, onModalChange, onJiraStateChange, 
     jira.refreshTickets(repo.repoPath, repo.currentBranch);
   };
 
+  const handleRemoveConfig = () => {
+    if (!repo.repoPath || !repo.currentBranch) return;
+    clearJiraConfig(repo.repoPath);
+    jira.initializeJiraState(repo.repoPath, repo.currentBranch, repo.currentRepoSlug);
+  };
+
   // Keyboard navigation
   useInput(
     (input, key) => {
@@ -131,6 +138,11 @@ export default function JiraView({ isFocused, onModalChange, onJiraStateChange, 
 
       if (input === 'l' && jira.jiraState !== 'not_configured') {
         modal.open('link');
+        return;
+      }
+
+      if (input === 'r' && jira.jiraState !== 'not_configured') {
+        handleRemoveConfig();
         return;
       }
 

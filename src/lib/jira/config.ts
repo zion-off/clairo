@@ -80,6 +80,17 @@ export function setJiraCredentials(repoPath: string, email: string, apiToken: st
 }
 
 /**
+ * Clear Jira configuration for a repository
+ */
+export function clearJiraConfig(repoPath: string): void {
+  updateRepoConfig(repoPath, {
+    jiraSiteUrl: undefined,
+    jiraEmail: undefined,
+    jiraApiToken: undefined
+  });
+}
+
+/**
  * Get linked tickets for a specific branch
  */
 export function getLinkedTickets(repoPath: string, branch: string): LinkedTicket[] {
