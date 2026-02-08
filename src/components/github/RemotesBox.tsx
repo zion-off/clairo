@@ -31,7 +31,7 @@ export default function RemotesBox({ remotes, selectedRemote, onSelect, loading,
       if (key.downArrow || input === 'j') {
         setHighlightedIndex((prev) => Math.min(remotes.length - 1, prev + 1));
       }
-      if (key.return) {
+      if (input === ' ') {
         onSelect(remotes[highlightedIndex].name);
       }
     },

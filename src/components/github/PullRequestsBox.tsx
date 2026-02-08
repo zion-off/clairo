@@ -45,7 +45,7 @@ export default function PullRequestsBox({
       if (key.downArrow || input === 'j') {
         setHighlightedIndex((prev) => Math.min(totalItems - 1, prev + 1));
       }
-      if (key.return) {
+      if (input === ' ') {
         if (highlightedIndex === prs.length) {
           onCreatePR();
         } else if (prs[highlightedIndex]) {

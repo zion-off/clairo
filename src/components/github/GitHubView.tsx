@@ -56,8 +56,9 @@ export default function GitHubView({ isFocused, onKeybindingsChange, onLogUpdate
     const bindings: Keybinding[] = [];
 
     if (focusedBox === 'remotes') {
-      bindings.push({ key: 'Enter', label: 'Select Remote' });
+      bindings.push({ key: 'Space', label: 'Select Remote' });
     } else if (focusedBox === 'prs') {
+      bindings.push({ key: 'Space', label: 'Select' });
       bindings.push({ key: 'n', label: 'New PR', color: 'green' });
       bindings.push({ key: 'r', label: 'Refresh' });
       bindings.push({ key: 'o', label: 'Open', color: 'green' });
