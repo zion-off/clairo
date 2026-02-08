@@ -6,6 +6,7 @@ import { LogsView } from './components/logs/index.js';
 import KeybindingsBar from './components/ui/KeybindingsBar.js';
 import { GitHubFocusedBox } from './constants/github.js';
 import { LogsFocusedBox } from './constants/logs.js';
+import { useRubberDuck } from './hooks/index.js';
 import { FocusedView, JiraState, computeKeybindings } from './lib/keybindings.js';
 
 export default function App() {
@@ -13,6 +14,7 @@ export default function App() {
   const [focusedView, setFocusedView] = useState<FocusedView>('github');
   const [modalOpen, setModalOpen] = useState(false);
   const [logRefreshKey, setLogRefreshKey] = useState(0);
+  const duck = useRubberDuck();
 
   // View state for keybindings computation
   const [githubFocusedBox, setGithubFocusedBox] = useState<GitHubFocusedBox>('remotes');
@@ -53,6 +55,12 @@ export default function App() {
         setFocusedView('logs');
         setLogsFocusedBox('viewer');
       }
+      if (input === 'd') {
+        duck.toggleDuck();
+      }
+      if (input === 'q' && duck.visible) {
+        duck.quack();
+      }
     },
     { isActive: !modalOpen }
   );
@@ -82,7 +90,11 @@ export default function App() {
           />
         </Box>
       </Box>
-      <KeybindingsBar contextBindings={keybindings} modalOpen={modalOpen} />
+      <KeybindingsBar
+        contextBindings={keybindings}
+        modalOpen={modalOpen}
+        duck={{ visible: duck.visible, message: duck.message }}
+      />
     </Box>
   );
 }

@@ -3,6 +3,7 @@ import { TitledBox } from '@mishieck/ink-titled-box';
 import { Box, Text, useInput } from 'ink';
 import { GitHubFocusedBox } from '../../constants/github.js';
 import { useGitRepo, usePRPolling, usePullRequests } from '../../hooks/github/index.js';
+import { duckEvents } from '../../lib/duckEvents.js';
 import { findRemoteWithBranch } from '../../lib/github/git.js';
 import { getRepoFromRemote, openPRCreationPage } from '../../lib/github/index.js';
 import { getLinkedTickets } from '../../lib/jira/index.js';
@@ -89,6 +90,7 @@ export default function GitHubView({ isFocused, onFocusedBoxChange, onLogUpdated
 
     if (!repo.currentBranch) {
       pullRequests.setError('prs', 'No branch detected');
+      duckEvents.emit('error');
       return;
     }
 
@@ -96,6 +98,7 @@ export default function GitHubView({ isFocused, onFocusedBoxChange, onLogUpdated
     const remoteResult = findRemoteWithBranch(repo.currentBranch);
     if (!remoteResult.success) {
       pullRequests.setError('prs', 'Push your branch to a remote first');
+      duckEvents.emit('error');
       return;
     }
 
@@ -103,6 +106,7 @@ export default function GitHubView({ isFocused, onFocusedBoxChange, onLogUpdated
     openPRCreationPage(remoteResult.data.owner, repo.currentBranch, (error) => {
       if (error) {
         pullRequests.setError('prs', `Failed to create PR: ${error.message}`);
+        duckEvents.emit('error');
       }
     });
 
@@ -125,6 +129,7 @@ export default function GitHubView({ isFocused, onFocusedBoxChange, onLogUpdated
             : [];
 
         logPRCreated(newPR.number, newPR.title, tickets);
+        duckEvents.emit('pr:opened');
         ctx.onLogUpdated?.();
         ctx.pullRequests.setSelectedPR(newPR);
         // Fetch details for the new PR

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import SelectInput from 'ink-select-input';
+import { duckEvents } from '../../lib/duckEvents.js';
 import {
   JiraAuth,
   JiraTransition,
@@ -31,6 +32,7 @@ export default function ChangeStatusModal({ repoPath, ticketKey, currentStatus, 
 
       if (!siteUrl || !creds.email || !creds.apiToken) {
         setError('Jira not configured');
+        duckEvents.emit('error');
         setLoading(false);
         return;
       }
@@ -42,6 +44,7 @@ export default function ChangeStatusModal({ repoPath, ticketKey, currentStatus, 
         setTransitions(result.data);
       } else {
         setError(result.error);
+        duckEvents.emit('error');
       }
       setLoading(false);
     };
@@ -58,6 +61,7 @@ export default function ChangeStatusModal({ repoPath, ticketKey, currentStatus, 
 
     if (!siteUrl || !creds.email || !creds.apiToken) {
       setError('Jira not configured');
+      duckEvents.emit('error');
       setApplying(false);
       return;
     }
@@ -69,9 +73,11 @@ export default function ChangeStatusModal({ repoPath, ticketKey, currentStatus, 
       // Find the transition to get the target status name
       const transition = transitions.find((t) => t.id === item.value);
       const newStatus = transition?.to.name ?? item.label;
+      duckEvents.emit('jira:transition');
       onComplete(newStatus);
     } else {
       setError(result.error);
+      duckEvents.emit('error');
       setApplying(false);
     }
   };

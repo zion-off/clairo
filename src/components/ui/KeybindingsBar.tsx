@@ -6,9 +6,15 @@ export type Keybinding = {
   color?: string;
 };
 
+type DuckProps = {
+  visible: boolean;
+  message: string;
+};
+
 type Props = {
   contextBindings?: Keybinding[];
   modalOpen?: boolean;
+  duck?: DuckProps;
 };
 
 const globalBindings: Keybinding[] = [
@@ -19,7 +25,9 @@ const globalBindings: Keybinding[] = [
 
 const modalBindings: Keybinding[] = [{ key: 'Esc', label: 'Cancel' }];
 
-export default function KeybindingsBar({ contextBindings = [], modalOpen = false }: Props) {
+const DUCK_ASCII = "<(')___";
+
+export default function KeybindingsBar({ contextBindings = [], modalOpen = false, duck }: Props) {
   const allBindings = modalOpen ? [...contextBindings, ...modalBindings] : [...contextBindings, ...globalBindings];
 
   return (
@@ -32,6 +40,12 @@ export default function KeybindingsBar({ contextBindings = [], modalOpen = false
           <Text dimColor>{binding.label}</Text>
         </Box>
       ))}
+      {duck?.visible && (
+        <Box flexGrow={1} justifyContent="flex-end" gap={1}>
+          <Text>{DUCK_ASCII}</Text>
+          <Text dimColor>{duck.message}</Text>
+        </Box>
+      )}
     </Box>
   );
 }

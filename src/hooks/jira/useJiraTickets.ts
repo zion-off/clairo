@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { duckEvents } from '../../lib/duckEvents.js';
 import { listPRsForBranch } from '../../lib/github/index.js';
 import {
   JiraAuth,
@@ -103,6 +104,7 @@ export function useJiraTickets() {
 
       if (!result.success) {
         setErrors((prev) => ({ ...prev, configure: result.error }));
+        duckEvents.emit('error');
         setLoading((prev) => ({ ...prev, configure: false }));
         return false;
       }
@@ -110,6 +112,7 @@ export function useJiraTickets() {
       setJiraSiteUrl(repoPath, siteUrl);
       setJiraCredentials(repoPath, email, apiToken);
       setJiraState('no_tickets');
+      duckEvents.emit('jira:configured');
       setLoading((prev) => ({ ...prev, configure: false }));
       return true;
     },
@@ -124,6 +127,7 @@ export function useJiraTickets() {
       const ticketKey = parseTicketKey(ticketInput);
       if (!ticketKey) {
         setErrors((prev) => ({ ...prev, link: 'Invalid ticket format. Use PROJ-123 or a Jira URL.' }));
+        duckEvents.emit('error');
         setLoading((prev) => ({ ...prev, link: false }));
         return false;
       }
@@ -133,6 +137,7 @@ export function useJiraTickets() {
 
       if (!siteUrl || !creds.email || !creds.apiToken) {
         setErrors((prev) => ({ ...prev, link: 'Jira not configured' }));
+        duckEvents.emit('error');
         setLoading((prev) => ({ ...prev, link: false }));
         return false;
       }
@@ -142,6 +147,7 @@ export function useJiraTickets() {
 
       if (!result.success) {
         setErrors((prev) => ({ ...prev, link: result.error }));
+        duckEvents.emit('error');
         setLoading((prev) => ({ ...prev, link: false }));
         return false;
       }
@@ -157,6 +163,7 @@ export function useJiraTickets() {
       const newTickets = getLinkedTickets(repoPath, currentBranch);
       setTickets(newTickets);
       setJiraState('has_tickets');
+      duckEvents.emit('jira:linked');
       setLoading((prev) => ({ ...prev, link: false }));
       return true;
     },

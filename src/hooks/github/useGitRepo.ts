@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { duckEvents } from '../../lib/duckEvents.js';
 import { getSelectedRemote, updateRepoConfig } from '../../lib/github/config.js';
 import { GitRemote, getCurrentBranch, getRepoRoot, isGitRepo, listRemotes } from '../../lib/github/git.js';
 import { getRepoFromRemote } from '../../lib/github/index.js';
@@ -31,6 +32,7 @@ export function useGitRepo() {
     if (!gitRepoCheck) {
       setLoading(false);
       setError('Not a git repository');
+      duckEvents.emit('error');
       return;
     }
 
@@ -47,6 +49,7 @@ export function useGitRepo() {
     const remotesResult = listRemotes();
     if (!remotesResult.success) {
       setError(remotesResult.error);
+      duckEvents.emit('error');
       setLoading(false);
       return;
     }

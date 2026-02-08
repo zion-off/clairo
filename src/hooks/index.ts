@@ -5,3 +5,4 @@ export * from './useTerminalFocus.js';
 export * from './useModal.js';
 export * from './useListNavigation.js';
 export * from './useScrollToIndex.js';
+export * from './useRubberDuck.js';

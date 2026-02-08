@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { duckEvents } from '../../lib/duckEvents.js';
 import { PRDetails, PRListItem, getPRDetails, listPRsForBranch } from '../../lib/github/index.js';
 
 export function usePullRequests() {
@@ -34,6 +35,7 @@ export function usePullRequests() {
       }
     } catch (err) {
       setErrors((prev) => ({ ...prev, prs: String(err) }));
+      duckEvents.emit('error');
       return null;
     } finally {
       setLoading((prev) => ({ ...prev, prs: false }));
@@ -53,6 +55,7 @@ export function usePullRequests() {
       }
     } catch (err) {
       setErrors((prev) => ({ ...prev, details: String(err) }));
+      duckEvents.emit('error');
     } finally {
       setLoading((prev) => ({ ...prev, details: false }));
     }
