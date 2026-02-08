@@ -28,12 +28,14 @@ export default function PullRequestsBox({
   isFocused
 }: Props) {
   const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const [copied, setCopied] = useState(false);
   const totalItems = prs.length + 1; // PRs + "Create new PR"
 
   useEffect(() => {
     const idx = prs.findIndex((p) => p.number === selectedPR?.number);
     if (idx >= 0) setHighlightedIndex(idx);
   }, [selectedPR, prs]);
+
 
   useInput(
     (input, key) => {
@@ -56,6 +58,8 @@ export default function PullRequestsBox({
         const pr = prs[highlightedIndex];
         const url = `https://github.com/${repoSlug}/pull/${pr.number}`;
         copyToClipboard(url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
       }
     },
     { isActive: isFocused }
@@ -63,10 +67,11 @@ export default function PullRequestsBox({
 
   const title = '[2] Pull Requests';
   const subtitle = branch ? ` (${branch})` : '';
+  const copiedIndicator = copied ? ' [Copied!]' : '';
   const borderColor = isFocused ? 'yellow' : undefined;
 
   return (
-    <TitledBox borderStyle="round" titles={[`${title}${subtitle}`]} borderColor={borderColor} flexShrink={0}>
+    <TitledBox borderStyle="round" titles={[`${title}${subtitle}${copiedIndicator}`]} borderColor={borderColor} flexShrink={0}>
       <Box flexDirection="column" paddingX={1} overflow="hidden">
         {loading && <Text dimColor>Loading PRs...</Text>}
         {error && <Text color="red">{error}</Text>}
