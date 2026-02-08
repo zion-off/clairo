@@ -28,7 +28,7 @@ async function jiraFetch(
   try {
     const headers: Record<string, string> = {
       Authorization: createAuthHeader(auth.email, auth.apiToken),
-      Accept: 'application/json',
+      Accept: 'application/json'
     };
 
     const fetchOptions: RequestInit = { method, headers };
@@ -69,13 +69,13 @@ export async function validateCredentials(auth: JiraAuth): Promise<JiraResult<un
       return {
         success: false,
         error: 'Invalid credentials. Check your email and API token.',
-        errorType: 'auth_error',
+        errorType: 'auth_error'
       };
     }
     return {
       success: false,
       error: result.error ?? 'Failed to connect to Jira',
-      errorType: 'api_error',
+      errorType: 'api_error'
     };
   }
 
@@ -93,20 +93,20 @@ export async function getIssue(auth: JiraAuth, ticketKey: string): Promise<JiraR
       return {
         success: false,
         error: 'Authentication failed',
-        errorType: 'auth_error',
+        errorType: 'auth_error'
       };
     }
     if (result.status === 404) {
       return {
         success: false,
         error: `Ticket ${ticketKey} not found`,
-        errorType: 'invalid_ticket',
+        errorType: 'invalid_ticket'
       };
     }
     return {
       success: false,
       error: result.error ?? 'Failed to fetch issue',
-      errorType: 'api_error',
+      errorType: 'api_error'
     };
   }
 
@@ -125,10 +125,7 @@ export type JiraTransition = {
 /**
  * Get available transitions for an issue
  */
-export async function getTransitions(
-  auth: JiraAuth,
-  ticketKey: string
-): Promise<JiraResult<JiraTransition[]>> {
+export async function getTransitions(auth: JiraAuth, ticketKey: string): Promise<JiraResult<JiraTransition[]>> {
   const result = await jiraFetch(auth, `/issue/${ticketKey}/transitions`);
 
   if (!result.ok) {
@@ -136,20 +133,20 @@ export async function getTransitions(
       return {
         success: false,
         error: 'Authentication failed',
-        errorType: 'auth_error',
+        errorType: 'auth_error'
       };
     }
     if (result.status === 404) {
       return {
         success: false,
         error: `Ticket ${ticketKey} not found`,
-        errorType: 'invalid_ticket',
+        errorType: 'invalid_ticket'
       };
     }
     return {
       success: false,
       error: result.error ?? 'Failed to fetch transitions',
-      errorType: 'api_error',
+      errorType: 'api_error'
     };
   }
 
@@ -167,7 +164,7 @@ export async function applyTransition(
 ): Promise<JiraResult<null>> {
   const result = await jiraFetch(auth, `/issue/${ticketKey}/transitions`, {
     method: 'POST',
-    body: { transition: { id: transitionId } },
+    body: { transition: { id: transitionId } }
   });
 
   if (!result.ok) {
@@ -175,20 +172,20 @@ export async function applyTransition(
       return {
         success: false,
         error: 'Authentication failed',
-        errorType: 'auth_error',
+        errorType: 'auth_error'
       };
     }
     if (result.status === 404) {
       return {
         success: false,
         error: `Ticket ${ticketKey} not found`,
-        errorType: 'invalid_ticket',
+        errorType: 'invalid_ticket'
       };
     }
     return {
       success: false,
       error: result.error ?? 'Failed to apply transition',
-      errorType: 'api_error',
+      errorType: 'api_error'
     };
   }
 

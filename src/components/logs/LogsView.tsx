@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import { Box, useInput } from 'ink';
-import { useLogs } from '../../hooks/logs/index.js';
 import { LogsFocusedBox } from '../../constants/logs.js';
-import LogsHistoryBox from './LogsHistoryBox.js';
+import { useLogs } from '../../hooks/logs/index.js';
 import LogViewerBox from './LogViewerBox.js';
+import LogsHistoryBox from './LogsHistoryBox.js';
 
 type Props = {
   isFocused: boolean;

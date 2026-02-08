@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { TitledBox } from '@mishieck/ink-titled-box';
 import { Box, Text, useInput } from 'ink';
+import { ScrollView } from 'ink-scroll-view';
+import { useScrollToIndex } from '../../hooks/index.js';
 import { copyToClipboard } from '../../lib/clipboard.js';
 import { PRListItem } from '../../lib/github/index.js';
 
@@ -29,13 +31,13 @@ export default function PullRequestsBox({
 }: Props) {
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const [copied, setCopied] = useState(false);
+  const scrollRef = useScrollToIndex(highlightedIndex);
   const totalItems = prs.length + 1; // PRs + "Create new PR"
 
   useEffect(() => {
     const idx = prs.findIndex((p) => p.number === selectedPR?.number);
     if (idx >= 0) setHighlightedIndex(idx);
   }, [selectedPR, prs]);
-
 
   useInput(
     (input, key) => {
@@ -71,13 +73,22 @@ export default function PullRequestsBox({
   const borderColor = isFocused ? 'yellow' : undefined;
 
   return (
-    <TitledBox borderStyle="round" titles={[`${title}${subtitle}${copiedIndicator}`]} borderColor={borderColor} flexShrink={0}>
-      <Box flexDirection="column" paddingX={1} overflow="hidden">
+    <TitledBox
+      borderStyle="round"
+      titles={[`${title}${subtitle}${copiedIndicator}`]}
+      borderColor={borderColor}
+      height={5}
+    >
+      <Box flexDirection="column" paddingX={1} flexGrow={1} overflow="hidden">
         {loading && <Text dimColor>Loading PRs...</Text>}
         {error && <Text color="red">{error}</Text>}
         {!loading && !error && (
-          <>
-            {prs.length === 0 && <Text dimColor>No PRs for this branch</Text>}
+          <ScrollView ref={scrollRef}>
+            {prs.length === 0 && (
+              <Text key="empty" dimColor>
+                No PRs for this branch
+              </Text>
+            )}
             {prs.map((pr, idx) => {
               const isHighlighted = isFocused && idx === highlightedIndex;
               const isSelected = pr.number === selectedPR?.number;
@@ -94,9 +105,11 @@ export default function PullRequestsBox({
                 </Box>
               );
             })}
-          </>
+            <Text key="create" color="blue">
+              {isFocused && highlightedIndex === prs.length ? '> ' : '  '}+ Create new PR
+            </Text>
+          </ScrollView>
         )}
-        <Text color="blue">{isFocused && highlightedIndex === prs.length ? '> ' : '  '}+ Create new PR</Text>
       </Box>
     </TitledBox>
   );

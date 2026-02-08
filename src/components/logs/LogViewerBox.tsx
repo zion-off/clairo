@@ -4,15 +4,15 @@ import { Box, Text, useInput } from 'ink';
 import { ScrollView, ScrollViewRef } from 'ink-scroll-view';
 import TextInput from 'ink-text-input';
 import { ClaudeProcess, generateStandupNotes } from '../../lib/claude/index.js';
-import Markdown from '../ui/Markdown.js';
 import {
   appendToLog,
   createEmptyLog,
   formatTimestamp,
   getTodayDate,
   logExists,
-  openLogInEditor,
+  openLogInEditor
 } from '../../lib/logs/index.js';
+import Markdown from '../ui/Markdown.js';
 
 type Props = {
   date: string | null;
@@ -138,18 +138,10 @@ export default function LogViewerBox({ date, content, isFocused, onRefresh, onLo
         <Box flexDirection="column" flexGrow={1}>
           <ScrollView ref={scrollRef}>
             <Box flexDirection="column" paddingX={1}>
-              {!date && (
-                <Text dimColor>Select a log file to view</Text>
-              )}
-              {date && content === null && (
-                <Text dimColor>Log file not found</Text>
-              )}
-              {date && content !== null && content.trim() === '' && (
-                <Text dimColor>Empty log file</Text>
-              )}
-              {date && content && content.trim() !== '' && (
-                <Markdown>{content}</Markdown>
-              )}
+              {!date && <Text dimColor>Select a log file to view</Text>}
+              {date && content === null && <Text dimColor>Log file not found</Text>}
+              {date && content !== null && content.trim() === '' && <Text dimColor>Empty log file</Text>}
+              {date && content && content.trim() !== '' && <Markdown>{content}</Markdown>}
             </Box>
           </ScrollView>
         </Box>

@@ -23,7 +23,7 @@ export function runClaudePrompt(prompt: string): ClaudeProcess {
         resolve({
           success: false,
           error: 'Cancelled',
-          errorType: 'execution_error',
+          errorType: 'execution_error'
         });
         return;
       }
@@ -38,7 +38,7 @@ export function runClaudePrompt(prompt: string): ClaudeProcess {
           resolve({
             success: false,
             error: 'Claude CLI not installed. Run: npm install -g @anthropic-ai/claude-code',
-            errorType: 'not_installed',
+            errorType: 'not_installed'
           });
           return;
         }
@@ -46,7 +46,7 @@ export function runClaudePrompt(prompt: string): ClaudeProcess {
         resolve({
           success: false,
           error: stderr?.trim() || error.message,
-          errorType: 'execution_error',
+          errorType: 'execution_error'
         });
         return;
       }
@@ -55,7 +55,7 @@ export function runClaudePrompt(prompt: string): ClaudeProcess {
         resolve({
           success: false,
           error: stderr?.trim() || 'Claude returned empty response',
-          errorType: 'execution_error',
+          errorType: 'execution_error'
         });
         return;
       }
@@ -67,19 +67,19 @@ export function runClaudePrompt(prompt: string): ClaudeProcess {
           resolve({
             success: false,
             error: json.result || 'Claude returned an error',
-            errorType: 'execution_error',
+            errorType: 'execution_error'
           });
           return;
         }
         resolve({
           success: true,
-          data: json.result || stdout.trim(),
+          data: json.result || stdout.trim()
         });
       } catch {
         // If JSON parsing fails, return raw output
         resolve({
           success: true,
-          data: stdout.trim(),
+          data: stdout.trim()
         });
       }
     });

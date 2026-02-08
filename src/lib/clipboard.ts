@@ -6,11 +6,7 @@ import { exec } from 'child_process';
  */
 export async function copyToClipboard(text: string): Promise<boolean> {
   const command =
-    process.platform === 'darwin'
-      ? 'pbcopy'
-      : process.platform === 'win32'
-        ? 'clip'
-        : 'xclip -selection clipboard';
+    process.platform === 'darwin' ? 'pbcopy' : process.platform === 'win32' ? 'clip' : 'xclip -selection clipboard';
 
   try {
     const child = exec(command);

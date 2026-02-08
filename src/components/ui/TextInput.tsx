@@ -9,7 +9,6 @@ type Props = {
 };
 
 export default function TextInput({ value, onChange, placeholder, isActive, mask }: Props) {
-
   useInput(
     (input, key) => {
       if (key.backspace || key.delete) {
@@ -37,11 +36,7 @@ export default function TextInput({ value, onChange, placeholder, isActive, mask
   return (
     <Box>
       <Text>
-        {showPlaceholder ? (
-          <Text dimColor>{placeholder}</Text>
-        ) : (
-          <Text>{displayValue}</Text>
-        )}
+        {showPlaceholder ? <Text dimColor>{placeholder}</Text> : <Text>{displayValue}</Text>}
         {isActive && <Text backgroundColor="yellow"> </Text>}
       </Text>
     </Box>

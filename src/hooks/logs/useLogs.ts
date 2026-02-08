@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { listLogFiles, readLog, LogFile, getTodayDate } from '../../lib/logs/index.js';
+import { LogFile, getTodayDate, listLogFiles, readLog } from '../../lib/logs/index.js';
 
 export function useLogs() {
   const [logFiles, setLogFiles] = useState<LogFile[]>([]);
@@ -58,10 +58,13 @@ export function useLogs() {
   }, [initialize]);
 
   // Select a log date - user action, direct fetch
-  const selectDate = useCallback((date: string) => {
-    setSelectedDate(date);
-    loadLogContent(date);
-  }, [loadLogContent]);
+  const selectDate = useCallback(
+    (date: string) => {
+      setSelectedDate(date);
+      loadLogContent(date);
+    },
+    [loadLogContent]
+  );
 
   // Refresh current view (files list + content if date is selected)
   const refresh = useCallback(() => {
@@ -116,6 +119,6 @@ export function useLogs() {
     selectDate,
     refresh,
     handleExternalLogUpdate,
-    handleLogCreated,
+    handleLogCreated
   };
 }

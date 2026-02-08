@@ -5,9 +5,7 @@ export type GitRemote = {
   url: string;
 };
 
-export type GitResult<T> =
-  | { success: true; data: T }
-  | { success: false; error: string };
+export type GitResult<T> = { success: true; data: T } | { success: false; error: string };
 
 /**
  * Check if the current directory is inside a git repository
@@ -16,7 +14,7 @@ export function isGitRepo(): boolean {
   try {
     execSync('git rev-parse --is-inside-work-tree', {
       encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', 'pipe'],
+      stdio: ['pipe', 'pipe', 'pipe']
     });
     return true;
   } catch {
@@ -31,7 +29,7 @@ export function getRepoRoot(): GitResult<string> {
   try {
     const root = execSync('git rev-parse --show-toplevel', {
       encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', 'pipe'],
+      stdio: ['pipe', 'pipe', 'pipe']
     }).trim();
     return { success: true, data: root };
   } catch {
@@ -46,7 +44,7 @@ export function listRemotes(): GitResult<GitRemote[]> {
   try {
     const output = execSync('git remote -v', {
       encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', 'pipe'],
+      stdio: ['pipe', 'pipe', 'pipe']
     });
 
     const remotes: GitRemote[] = [];
@@ -74,7 +72,7 @@ export function getCurrentBranch(): GitResult<string> {
   try {
     const branch = execSync('git branch --show-current', {
       encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', 'pipe'],
+      stdio: ['pipe', 'pipe', 'pipe']
     }).trim();
 
     if (!branch) {
@@ -93,7 +91,7 @@ export function findRemoteWithBranch(branch: string): GitResult<{ remote: string
   try {
     const remoteBranches = execSync('git branch -r', {
       encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', 'pipe'],
+      stdio: ['pipe', 'pipe', 'pipe']
     });
 
     const remotes = listRemotes();

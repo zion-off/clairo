@@ -31,7 +31,7 @@ export function getJiraCredentials(repoPath: string): { email: string | null; ap
   const config = getRepoConfig(repoPath);
   return {
     email: config.jiraEmail ?? null,
-    apiToken: config.jiraApiToken ?? null,
+    apiToken: config.jiraApiToken ?? null
   };
 }
 
@@ -66,8 +66,8 @@ export function addLinkedTicket(repoPath: string, branch: string, ticket: Linked
   updateRepoConfig(repoPath, {
     branchTickets: {
       ...branchTickets,
-      [branch]: [...tickets, ticket],
-    },
+      [branch]: [...tickets, ticket]
+    }
   });
 }
 
@@ -82,8 +82,8 @@ export function removeLinkedTicket(repoPath: string, branch: string, ticketKey: 
   updateRepoConfig(repoPath, {
     branchTickets: {
       ...branchTickets,
-      [branch]: tickets.filter((t) => t.key !== ticketKey),
-    },
+      [branch]: tickets.filter((t) => t.key !== ticketKey)
+    }
   });
 }
 
@@ -98,7 +98,7 @@ export function updateTicketStatus(repoPath: string, branch: string, ticketKey: 
   updateRepoConfig(repoPath, {
     branchTickets: {
       ...branchTickets,
-      [branch]: tickets.map((t) => (t.key === ticketKey ? { ...t, status: newStatus } : t)),
-    },
+      [branch]: tickets.map((t) => (t.key === ticketKey ? { ...t, status: newStatus } : t))
+    }
   });
 }

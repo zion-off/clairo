@@ -17,6 +17,6 @@ export function useModal<T extends string>() {
     type: modalType,
     isOpen,
     open,
-    close,
+    close
   };
 }

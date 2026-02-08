@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { TitledBox } from '@mishieck/ink-titled-box';
 import { Box, Text, useInput } from 'ink';
+import { GitHubFocusedBox } from '../../constants/github.js';
+import { useGitRepo, usePRPolling, usePullRequests } from '../../hooks/github/index.js';
 import { findRemoteWithBranch } from '../../lib/github/git.js';
 import { getRepoFromRemote, openPRCreationPage } from '../../lib/github/index.js';
 import { getLinkedTickets } from '../../lib/jira/index.js';
 import { logPRCreated } from '../../lib/logs/logger.js';
-import { useGitRepo, usePRPolling, usePullRequests } from '../../hooks/github/index.js';
-import { GitHubFocusedBox } from '../../constants/github.js';
 import PRDetailsBox from './PRDetailsBox.js';
 import PullRequestsBox from './PullRequestsBox.js';
 import RemotesBox from './RemotesBox.js';
@@ -119,9 +119,10 @@ export default function GitHubView({ isFocused, onFocusedBoxChange, onLogUpdated
       onNewPR: (newPR) => {
         const ctx = createPRContext.current;
         // Get linked Jira tickets for logging
-        const tickets = ctx.repo.repoPath && ctx.repo.currentBranch
-          ? getLinkedTickets(ctx.repo.repoPath, ctx.repo.currentBranch).map((t) => t.key)
-          : [];
+        const tickets =
+          ctx.repo.repoPath && ctx.repo.currentBranch
+            ? getLinkedTickets(ctx.repo.repoPath, ctx.repo.currentBranch).map((t) => t.key)
+            : [];
 
         logPRCreated(newPR.number, newPR.title, tickets);
         ctx.onLogUpdated?.();

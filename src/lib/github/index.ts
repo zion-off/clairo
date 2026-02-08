@@ -83,9 +83,7 @@ export function getRepoFromRemote(remoteUrl: string): string | null {
   if (sshMatch) return sshMatch[1].replace(/\.git$/, '');
 
   // Handle HTTPS: https://github.com/owner/repo.git
-  const httpsMatch = remoteUrl.match(
-    /https:\/\/github\.com\/(.+?)(?:\.git)?$/
-  );
+  const httpsMatch = remoteUrl.match(/https:\/\/github\.com\/(.+?)(?:\.git)?$/);
   if (httpsMatch) return httpsMatch[1].replace(/\.git$/, '');
 
   return null;
@@ -98,22 +96,19 @@ export function getRepoFromRemote(remoteUrl: string): string | null {
  * 1. Try `gh pr view` to auto-detect the PR for the current branch (handles forks correctly)
  * 2. Fall back to fetching all PRs and filtering by branch name
  */
-export async function listPRsForBranch(
-  branch: string,
-  repo: string
-): Promise<GitHubResult<PRListItem[]>> {
+export async function listPRsForBranch(branch: string, repo: string): Promise<GitHubResult<PRListItem[]>> {
   if (!(await isGhInstalled())) {
     return {
       success: false,
       error: 'GitHub CLI (gh) is not installed. Install from https://cli.github.com',
-      errorType: 'not_installed',
+      errorType: 'not_installed'
     };
   }
   if (!(await isGhAuthenticated())) {
     return {
       success: false,
       error: "Not authenticated. Run 'gh auth login' to authenticate.",
-      errorType: 'not_authenticated',
+      errorType: 'not_authenticated'
     };
   }
 
@@ -122,9 +117,7 @@ export async function listPRsForBranch(
   // Option 2: Try gh pr view first (auto-detects PR for current branch, handles forks)
   // Note: Don't use --repo here - gh pr view auto-detects the correct upstream
   try {
-    const { stdout } = await execAsync(
-      `gh pr view --json ${fields} 2>/dev/null`
-    );
+    const { stdout } = await execAsync(`gh pr view --json ${fields} 2>/dev/null`);
     const pr = JSON.parse(stdout) as PRListItem;
     return { success: true, data: [pr] };
   } catch {
@@ -139,12 +132,10 @@ export async function listPRsForBranch(
     const allPrs = JSON.parse(stdout) as (PRListItem & { headRefName: string })[];
 
     // Filter by branch name (handles fork format like "username:branch")
-    const prs = allPrs.filter((pr) =>
-      pr.headRefName === branch || pr.headRefName.endsWith(`:${branch}`)
-    );
+    const prs = allPrs.filter((pr) => pr.headRefName === branch || pr.headRefName.endsWith(`:${branch}`));
 
     // Remove headRefName from result (not part of PRListItem type)
-    const result = prs.map(({ headRefName: _, ...rest }) => rest);
+    const result = prs.map(({ headRefName: _headRefName, ...rest }) => rest);
 
     return { success: true, data: result };
   } catch {
@@ -155,22 +146,19 @@ export async function listPRsForBranch(
 /**
  * Get detailed PR information
  */
-export async function getPRDetails(
-  prNumber: number,
-  repo: string
-): Promise<GitHubResult<PRDetails>> {
+export async function getPRDetails(prNumber: number, repo: string): Promise<GitHubResult<PRDetails>> {
   if (!(await isGhInstalled())) {
     return {
       success: false,
       error: 'GitHub CLI (gh) is not installed',
-      errorType: 'not_installed',
+      errorType: 'not_installed'
     };
   }
   if (!(await isGhAuthenticated())) {
     return {
       success: false,
       error: "Not authenticated. Run 'gh auth login'",
-      errorType: 'not_authenticated',
+      errorType: 'not_authenticated'
     };
   }
 
@@ -191,19 +179,17 @@ export async function getPRDetails(
       'assignees',
       'reviewRequests',
       'reviews',
-      'statusCheckRollup',
+      'statusCheckRollup'
     ].join(',');
 
-    const { stdout } = await execAsync(
-      `gh pr view ${prNumber} --json ${fields} --repo "${repo}"`
-    );
+    const { stdout } = await execAsync(`gh pr view ${prNumber} --json ${fields} --repo "${repo}"`);
     const pr = JSON.parse(stdout) as PRDetails;
     return { success: true, data: pr };
   } catch {
     return {
       success: false,
       error: 'Failed to fetch PR details',
-      errorType: 'api_error',
+      errorType: 'api_error'
     };
   }
 }
@@ -212,11 +198,7 @@ export async function getPRDetails(
  * Open PR creation page in browser
  * Returns a promise that resolves when the browser command completes
  */
-export function openPRCreationPage(
-  owner: string,
-  branch: string,
-  onComplete?: (error: Error | null) => void
-): void {
+export function openPRCreationPage(owner: string, branch: string, onComplete?: (error: Error | null) => void): void {
   const headFlag = `${owner}:${branch}`;
   exec(`gh pr create --web --head "${headFlag}"`, (error) => {
     // Emit resize to refresh TUI after returning from browser
@@ -233,27 +215,25 @@ export async function getDefaultBranch(repo: string): Promise<GitHubResult<strin
     return {
       success: false,
       error: 'GitHub CLI (gh) is not installed',
-      errorType: 'not_installed',
+      errorType: 'not_installed'
     };
   }
   if (!(await isGhAuthenticated())) {
     return {
       success: false,
       error: "Not authenticated. Run 'gh auth login'",
-      errorType: 'not_authenticated',
+      errorType: 'not_authenticated'
     };
   }
 
   try {
-    const { stdout } = await execAsync(
-      `gh repo view "${repo}" --json defaultBranchRef --jq '.defaultBranchRef.name'`
-    );
+    const { stdout } = await execAsync(`gh repo view "${repo}" --json defaultBranchRef --jq '.defaultBranchRef.name'`);
     return { success: true, data: stdout.trim() };
   } catch {
     return {
       success: false,
       error: 'Failed to get default branch',
-      errorType: 'api_error',
+      errorType: 'api_error'
     };
   }
 }

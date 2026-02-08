@@ -16,12 +16,11 @@ export default function TicketItem({ ticketKey, summary, status, isHighlighted, 
     <Box>
       <Text color={textColor}>
         {prefix}
-        <Text bold color="blue">{ticketKey}</Text>
-        {' '}
+        <Text bold color="blue">
+          {ticketKey}
+        </Text>{' '}
         {summary}
-        {status && (
-          <Text dimColor> [{status}]</Text>
-        )}
+        {status && <Text dimColor> [{status}]</Text>}
       </Text>
     </Box>
   );

@@ -1,5 +1,8 @@
 import { useCallback, useState } from 'react';
+import { listPRsForBranch } from '../../lib/github/index.js';
 import {
+  JiraAuth,
+  LinkedTicket,
   addLinkedTicket,
   extractTicketKey,
   getIssue,
@@ -7,15 +10,12 @@ import {
   getJiraSiteUrl,
   getLinkedTickets,
   isJiraConfigured,
-  JiraAuth,
-  LinkedTicket,
   parseTicketKey,
   removeLinkedTicket,
   setJiraCredentials,
   setJiraSiteUrl,
-  validateCredentials,
+  validateCredentials
 } from '../../lib/jira/index.js';
-import { listPRsForBranch } from '../../lib/github/index.js';
 
 export type JiraState = 'not_configured' | 'no_tickets' | 'has_tickets';
 
@@ -27,68 +27,65 @@ export function useJiraTickets() {
 
   // Initialize Jira state AND auto-detect ticket in one function
   // This eliminates the effect chain by doing both operations in sequence
-  const initializeJiraState = useCallback(
-    async (repoPath: string, currentBranch: string, repoSlug?: string | null) => {
-      if (!isJiraConfigured(repoPath)) {
-        setJiraState('not_configured');
-        setTickets([]);
-        return;
+  const initializeJiraState = useCallback(async (repoPath: string, currentBranch: string, repoSlug?: string | null) => {
+    if (!isJiraConfigured(repoPath)) {
+      setJiraState('not_configured');
+      setTickets([]);
+      return;
+    }
+
+    const linkedTickets = getLinkedTickets(repoPath, currentBranch);
+
+    if (linkedTickets.length > 0) {
+      setTickets(linkedTickets);
+      setJiraState('has_tickets');
+      return;
+    }
+
+    // No tickets - attempt auto-detection from branch name
+    let ticketKey = extractTicketKey(currentBranch);
+
+    // If no ticket in branch name and repoSlug provided, try PR title
+    if (!ticketKey && repoSlug) {
+      const prResult = await listPRsForBranch(currentBranch, repoSlug);
+      if (prResult.success && prResult.data.length > 0) {
+        ticketKey = extractTicketKey(prResult.data[0].title);
       }
+    }
 
-      const linkedTickets = getLinkedTickets(repoPath, currentBranch);
+    if (!ticketKey) {
+      setTickets([]);
+      setJiraState('no_tickets');
+      return;
+    }
 
-      if (linkedTickets.length > 0) {
-        setTickets(linkedTickets);
-        setJiraState('has_tickets');
-        return;
-      }
+    const siteUrl = getJiraSiteUrl(repoPath);
+    const creds = getJiraCredentials(repoPath);
+    if (!siteUrl || !creds.email || !creds.apiToken) {
+      setTickets([]);
+      setJiraState('no_tickets');
+      return;
+    }
 
-      // No tickets - attempt auto-detection from branch name
-      let ticketKey = extractTicketKey(currentBranch);
+    const auth: JiraAuth = { siteUrl, email: creds.email, apiToken: creds.apiToken };
 
-      // If no ticket in branch name and repoSlug provided, try PR title
-      if (!ticketKey && repoSlug) {
-        const prResult = await listPRsForBranch(currentBranch, repoSlug);
-        if (prResult.success && prResult.data.length > 0) {
-          ticketKey = extractTicketKey(prResult.data[0].title);
-        }
-      }
-
-      if (!ticketKey) {
-        setTickets([]);
-        setJiraState('no_tickets');
-        return;
-      }
-
-      const siteUrl = getJiraSiteUrl(repoPath);
-      const creds = getJiraCredentials(repoPath);
-      if (!siteUrl || !creds.email || !creds.apiToken) {
-        setTickets([]);
-        setJiraState('no_tickets');
-        return;
-      }
-
-      const auth: JiraAuth = { siteUrl, email: creds.email, apiToken: creds.apiToken };
-
-      // Fetch and auto-link the ticket
-      const result = await getIssue(auth, ticketKey);
-      if (result.success) {
-        const linkedTicket: LinkedTicket = {
-          key: result.data.key,
-          summary: result.data.fields.summary,
-          status: result.data.fields.status.name,
-          linkedAt: new Date().toISOString(),
-        };
-        addLinkedTicket(repoPath, currentBranch, linkedTicket);
-        setTickets([linkedTicket]);
-        setJiraState('has_tickets');
-      } else {
-        setTickets([]);
-        setJiraState('no_tickets');
-      }
-    },
-    []
-  );
+    // Fetch and auto-link the ticket
+    const result = await getIssue(auth, ticketKey);
+    if (result.success) {
+      const linkedTicket: LinkedTicket = {
+        key: result.data.key,
+        summary: result.data.fields.summary,
+        status: result.data.fields.status.name,
+        linkedAt: new Date().toISOString()
+      };
+      addLinkedTicket(repoPath, currentBranch, linkedTicket);
+      setTickets([linkedTicket]);
+      setJiraState('has_tickets');
+    } else {
+      setTickets([]);
+      setJiraState('no_tickets');
+    }
+  }, []);
 
   const refreshTickets = useCallback((repoPath: string, currentBranch: string) => {
     const linkedTickets = getLinkedTickets(repoPath, currentBranch);
@@ -153,7 +150,7 @@ export function useJiraTickets() {
         key: result.data.key,
         summary: result.data.fields.summary,
         status: result.data.fields.status.name,
-        linkedAt: new Date().toISOString(),
+        linkedAt: new Date().toISOString()
       };
 
       addLinkedTicket(repoPath, currentBranch, linkedTicket);
@@ -184,6 +181,6 @@ export function useJiraTickets() {
     configureJira,
     linkTicket,
     unlinkTicket,
-    clearError,
+    clearError
   };
 }

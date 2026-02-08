@@ -1,4 +1,4 @@
-import { loadConfig, saveConfig, RepositoryConfig } from '../config/index.js';
+import { RepositoryConfig, loadConfig, saveConfig } from '../config/index.js';
 
 /**
  * Get config for a specific repository
@@ -12,17 +12,14 @@ export function getRepoConfig(repoPath: string): RepositoryConfig {
 /**
  * Update config for a specific repository
  */
-export function updateRepoConfig(
-  repoPath: string,
-  updates: Partial<RepositoryConfig>
-): void {
+export function updateRepoConfig(repoPath: string, updates: Partial<RepositoryConfig>): void {
   const config = loadConfig();
   if (!config.repositories) {
     config.repositories = {};
   }
   config.repositories[repoPath] = {
     ...config.repositories[repoPath],
-    ...updates,
+    ...updates
   };
   saveConfig(config);
 }
@@ -30,17 +27,11 @@ export function updateRepoConfig(
 /**
  * Get the selected remote for a repository, with fallback logic
  */
-export function getSelectedRemote(
-  repoPath: string,
-  availableRemotes: string[]
-): string | null {
+export function getSelectedRemote(repoPath: string, availableRemotes: string[]): string | null {
   const repoConfig = getRepoConfig(repoPath);
 
   // If saved remote still exists, use it
-  if (
-    repoConfig.selectedRemote &&
-    availableRemotes.includes(repoConfig.selectedRemote)
-  ) {
+  if (repoConfig.selectedRemote && availableRemotes.includes(repoConfig.selectedRemote)) {
     return repoConfig.selectedRemote;
   }
 

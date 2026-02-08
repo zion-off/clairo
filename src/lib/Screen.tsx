@@ -1,5 +1,5 @@
-import { Box, useStdout } from 'ink';
 import { ReactNode, useCallback, useEffect, useState } from 'react';
+import { Box, useStdout } from 'ink';
 
 type ScreenProps = {
   children: ReactNode;
@@ -8,10 +8,7 @@ type ScreenProps = {
 export function Screen({ children }: ScreenProps) {
   const { stdout } = useStdout();
 
-  const getSize = useCallback(
-    () => ({ height: stdout.rows, width: stdout.columns }),
-    [stdout]
-  );
+  const getSize = useCallback(() => ({ height: stdout.rows, width: stdout.columns }), [stdout]);
 
   const [size, setSize] = useState(getSize);
 

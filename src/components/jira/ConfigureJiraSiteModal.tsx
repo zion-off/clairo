@@ -136,9 +136,7 @@ export default function ConfigureJiraSiteModal({
       )}
 
       <Box marginTop={1}>
-        <Text dimColor>
-          Get your API token from: https://id.atlassian.com/manage-profile/security/api-tokens
-        </Text>
+        <Text dimColor>Get your API token from: https://id.atlassian.com/manage-profile/security/api-tokens</Text>
       </Box>
     </Box>
   );

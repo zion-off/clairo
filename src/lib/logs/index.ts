@@ -1,7 +1,7 @@
-import { existsSync, mkdirSync, readdirSync, readFileSync, appendFileSync, writeFileSync } from 'fs';
+import { spawnSync } from 'child_process';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
-import { spawnSync } from 'child_process';
 import { LogFile } from './types.js';
 
 const LOGS_DIRECTORY = join(homedir(), '.clairo', 'logs');
@@ -63,7 +63,7 @@ export function listLogFiles(): LogFile[] {
         return {
           date,
           filename: file,
-          isToday: date === today,
+          isToday: date === today
         };
       })
       .sort((a, b) => b.date.localeCompare(a.date)); // Newest first
@@ -154,7 +154,7 @@ export function openLogInEditor(date: string): boolean {
   const editor = process.env.VISUAL || process.env.EDITOR || 'vi';
 
   const result = spawnSync(editor, [filePath], {
-    stdio: 'inherit',
+    stdio: 'inherit'
   });
 
   // Clear screen and trigger resize to refresh TUI

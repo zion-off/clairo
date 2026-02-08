@@ -46,12 +46,7 @@ export default function LinkTicketModal({ onSubmit, onCancel, loading, error }: 
 
       <Box>
         <Text color="blue">Ticket: </Text>
-        <TextInput
-          value={ticketInput}
-          onChange={setTicketInput}
-          placeholder="PROJ-123"
-          isActive={!loading}
-        />
+        <TextInput value={ticketInput} onChange={setTicketInput} placeholder="PROJ-123" isActive={!loading} />
       </Box>
 
       {loading && (
@@ -61,9 +56,7 @@ export default function LinkTicketModal({ onSubmit, onCancel, loading, error }: 
       )}
 
       <Box marginTop={1}>
-        <Text dimColor>
-          Examples: PROJ-123 or https://company.atlassian.net/browse/PROJ-123
-        </Text>
+        <Text dimColor>Examples: PROJ-123 or https://company.atlassian.net/browse/PROJ-123</Text>
       </Box>
     </Box>
   );

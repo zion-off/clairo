@@ -1,7 +1,7 @@
+import Table from 'cli-table3';
+import { Token, Tokens, marked } from 'marked';
 import { Box, Text } from 'ink';
 import Link from 'ink-link';
-import { marked, Token, Tokens } from 'marked';
-import Table from 'cli-table3';
 
 type Props = {
   children: string;
@@ -30,7 +30,11 @@ function TokenRenderer({ token }: { token: Token }) {
       );
 
     case 'paragraph': {
-      const hasLinks = token.tokens?.some((t: Token) => t.type === 'link' || (t.type === 'strong' && 'tokens' in t && t.tokens?.some((st: Token) => st.type === 'link')));
+      const hasLinks = token.tokens?.some(
+        (t: Token) =>
+          t.type === 'link' ||
+          (t.type === 'strong' && 'tokens' in t && t.tokens?.some((st: Token) => st.type === 'link'))
+      );
       if (hasLinks) {
         // Use Box for paragraphs with links to prevent layout issues
         return (
@@ -98,7 +102,7 @@ function TokenRenderer({ token }: { token: Token }) {
 function TableRenderer({ token }: { token: Tokens.Table }) {
   const table = new Table({
     head: token.header.map((cell) => renderInlineToString(cell.tokens)),
-    style: { head: ['cyan'], border: ['gray'] },
+    style: { head: ['cyan'], border: ['gray'] }
   });
 
   for (const row of token.rows) {

@@ -11,7 +11,8 @@ export default [
     rules: {
       ...react.configs.recommended.rules,
       'react/prop-types': 'off',
-      'react/react-in-jsx-scope': 'off'
+      'react/react-in-jsx-scope': 'off',
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }]
     },
     settings: {
       react: {

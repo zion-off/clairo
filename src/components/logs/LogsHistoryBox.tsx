@@ -1,5 +1,7 @@
 import { TitledBox } from '@mishieck/ink-titled-box';
 import { Box, Text, useInput } from 'ink';
+import { ScrollView } from 'ink-scroll-view';
+import { useScrollToIndex } from '../../hooks/index.js';
 import { LogFile } from '../../lib/logs/index.js';
 
 type Props = {
@@ -17,8 +19,9 @@ export default function LogsHistoryBox({
   highlightedIndex,
   onHighlight,
   onSelect,
-  isFocused,
+  isFocused
 }: Props) {
+  const scrollRef = useScrollToIndex(highlightedIndex);
   const title = '[5] Logs';
   const borderColor = isFocused ? 'yellow' : undefined;
 
@@ -43,33 +46,30 @@ export default function LogsHistoryBox({
   );
 
   return (
-    <TitledBox borderStyle="round" titles={[title]} borderColor={borderColor} flexShrink={0}>
-      <Box flexDirection="column" paddingX={1}>
-        {logFiles.length === 0 && (
-          <Text dimColor>No logs yet</Text>
-        )}
-        {logFiles.map((file, idx) => {
-          const isHighlighted = idx === highlightedIndex;
-          const isSelected = file.date === selectedDate;
-          const cursor = isHighlighted ? '>' : ' ';
-          const indicator = isSelected ? ' *' : '';
+    <TitledBox borderStyle="round" titles={[title]} borderColor={borderColor} height={5}>
+      <Box flexDirection="column" paddingX={1} flexGrow={1} overflow="hidden">
+        {logFiles.length === 0 && <Text dimColor>No logs yet</Text>}
+        {logFiles.length > 0 && (
+          <ScrollView ref={scrollRef}>
+            {logFiles.map((file, idx) => {
+              const isHighlighted = idx === highlightedIndex;
+              const isSelected = file.date === selectedDate;
+              const cursor = isHighlighted ? '>' : ' ';
+              const indicator = isSelected ? ' *' : '';
 
-          return (
-            <Box key={file.date}>
-              <Text color={isHighlighted ? 'yellow' : undefined}>
-                {cursor}{' '}
-              </Text>
-              <Text
-                color={file.isToday ? 'green' : undefined}
-                bold={file.isToday}
-              >
-                {file.date}
-              </Text>
-              {file.isToday && <Text color="green"> (today)</Text>}
-              <Text dimColor>{indicator}</Text>
-            </Box>
-          );
-        })}
+              return (
+                <Box key={file.date}>
+                  <Text color={isHighlighted ? 'yellow' : undefined}>{cursor} </Text>
+                  <Text color={file.isToday ? 'green' : undefined} bold={file.isToday}>
+                    {file.date}
+                  </Text>
+                  {file.isToday && <Text color="green"> (today)</Text>}
+                  <Text dimColor>{indicator}</Text>
+                </Box>
+              );
+            })}
+          </ScrollView>
+        )}
       </Box>
     </TitledBox>
   );

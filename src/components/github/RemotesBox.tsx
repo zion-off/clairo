@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { TitledBox } from '@mishieck/ink-titled-box';
 import { Box, Text, useInput } from 'ink';
+import { ScrollView } from 'ink-scroll-view';
+import { useScrollToIndex } from '../../hooks/index.js';
 import { GitRemote } from '../../lib/github/git.js';
 
 type Props = {
@@ -14,6 +16,7 @@ type Props = {
 
 export default function RemotesBox({ remotes, selectedRemote, onSelect, loading, error, isFocused }: Props) {
   const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const scrollRef = useScrollToIndex(highlightedIndex);
 
   // Sync highlight with selected remote
   useEffect(() => {
@@ -42,28 +45,30 @@ export default function RemotesBox({ remotes, selectedRemote, onSelect, loading,
   const borderColor = isFocused ? 'yellow' : undefined;
 
   return (
-    <TitledBox borderStyle="round" titles={[title]} borderColor={borderColor} flexShrink={0}>
-      <Box flexDirection="column" paddingX={1} overflow="hidden">
+    <TitledBox borderStyle="round" titles={[title]} borderColor={borderColor} height={5}>
+      <Box flexDirection="column" paddingX={1} flexGrow={1} overflow="hidden">
         {loading && <Text dimColor>Loading...</Text>}
         {error && <Text color="red">{error}</Text>}
         {!loading && !error && remotes.length === 0 && <Text dimColor>No remotes configured</Text>}
-        {!loading &&
-          !error &&
-          remotes.map((remote, idx) => {
-            const isHighlighted = isFocused && idx === highlightedIndex;
-            const isSelected = remote.name === selectedRemote;
-            const cursor = isHighlighted ? '>' : ' ';
-            const indicator = isSelected ? ' *' : '';
-            return (
-              <Box key={remote.name}>
-                <Text color={isHighlighted ? 'yellow' : undefined}>{cursor} </Text>
-                <Text color={isSelected ? 'green' : undefined}>
-                  {remote.name} ({remote.url})
-                </Text>
-                <Text dimColor>{indicator}</Text>
-              </Box>
-            );
-          })}
+        {!loading && !error && remotes.length > 0 && (
+          <ScrollView ref={scrollRef}>
+            {remotes.map((remote, idx) => {
+              const isHighlighted = isFocused && idx === highlightedIndex;
+              const isSelected = remote.name === selectedRemote;
+              const cursor = isHighlighted ? '>' : ' ';
+              const indicator = isSelected ? ' *' : '';
+              return (
+                <Box key={remote.name}>
+                  <Text color={isHighlighted ? 'yellow' : undefined}>{cursor} </Text>
+                  <Text color={isSelected ? 'green' : undefined}>
+                    {remote.name} ({remote.url})
+                  </Text>
+                  <Text dimColor>{indicator}</Text>
+                </Box>
+              );
+            })}
+          </ScrollView>
+        )}
       </Box>
     </TitledBox>
   );

@@ -26,6 +26,6 @@ export function useListNavigation(length: number) {
     prev,
     next,
     reset,
-    setIndex,
+    setIndex
   };
 }

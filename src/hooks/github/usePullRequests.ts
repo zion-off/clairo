@@ -59,20 +59,26 @@ export function usePullRequests() {
   }, []);
 
   // Fetch PRs and auto-select first with details
-  const fetchPRsAndDetails = useCallback(async (branch: string, repoSlug: string): Promise<void> => {
-    const firstPR = await refreshPRs(branch, repoSlug);
-    if (firstPR) {
-      setSelectedPR(firstPR);
-      refreshDetails(firstPR, repoSlug);
-    }
-  }, [refreshPRs, refreshDetails]);
+  const fetchPRsAndDetails = useCallback(
+    async (branch: string, repoSlug: string): Promise<void> => {
+      const firstPR = await refreshPRs(branch, repoSlug);
+      if (firstPR) {
+        setSelectedPR(firstPR);
+        refreshDetails(firstPR, repoSlug);
+      }
+    },
+    [refreshPRs, refreshDetails]
+  );
 
-  const selectPR = useCallback((pr: PRListItem, repoSlug: string | null): void => {
-    setSelectedPR(pr);
-    if (repoSlug) {
-      refreshDetails(pr, repoSlug);
-    }
-  }, [refreshDetails]);
+  const selectPR = useCallback(
+    (pr: PRListItem, repoSlug: string | null): void => {
+      setSelectedPR(pr);
+      if (repoSlug) {
+        refreshDetails(pr, repoSlug);
+      }
+    },
+    [refreshDetails]
+  );
 
   // Helper to set error messages from outside the hook
   const setError = useCallback((key: 'prs' | 'details', message: string | undefined) => {

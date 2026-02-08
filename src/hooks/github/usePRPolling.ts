@@ -1,5 +1,5 @@
-import { useRef, useEffect, useState, useCallback } from 'react';
-import { listPRsForBranch, PRListItem } from '../../lib/github';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { PRListItem, listPRsForBranch } from '../../lib/github';
 
 type PollingOptions = {
   branch: string;
@@ -33,7 +33,7 @@ export function usePRPolling() {
         onNewPR,
         onPRsUpdated,
         maxAttempts = 24,
-        pollInterval = 5000,
+        pollInterval = 5000
       } = options;
 
       // Clear any existing polling before starting new one
@@ -58,9 +58,7 @@ export function usePRPolling() {
           onPRsUpdated(result.data);
 
           // Find newly created PR
-          const newPR = result.data.find(
-            (pr) => !prNumbersBeforeCreate.current.has(pr.number)
-          );
+          const newPR = result.data.find((pr) => !prNumbersBeforeCreate.current.has(pr.number));
           if (newPR) {
             // Stop polling - we found the new PR
             stopPolling();
@@ -84,6 +82,6 @@ export function usePRPolling() {
   return {
     startPolling,
     stopPolling,
-    isPolling,
+    isPolling
   };
 }

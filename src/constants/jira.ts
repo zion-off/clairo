@@ -10,6 +10,6 @@ export const JIRA_KEYBINDINGS: Record<JiraState, Keybinding[]> = {
     { key: 's', label: 'Status' },
     { key: 'd', label: 'Unlink', color: 'red' },
     { key: 'o', label: 'Open', color: 'green' },
-    { key: 'y', label: 'Copy Link' },
-  ],
+    { key: 'y', label: 'Copy Link' }
+  ]
 };

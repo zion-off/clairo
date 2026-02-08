@@ -6,7 +6,7 @@ import { LogsView } from './components/logs/index.js';
 import KeybindingsBar from './components/ui/KeybindingsBar.js';
 import { GitHubFocusedBox } from './constants/github.js';
 import { LogsFocusedBox } from './constants/logs.js';
-import { computeKeybindings, FocusedView, JiraState } from './lib/keybindings.js';
+import { FocusedView, JiraState, computeKeybindings } from './lib/keybindings.js';
 
 export default function App() {
   const { exit } = useApp();
@@ -25,7 +25,7 @@ export default function App() {
       computeKeybindings(focusedView, {
         github: { focusedBox: githubFocusedBox },
         jira: { jiraState, modalOpen },
-        logs: { focusedBox: logsFocusedBox },
+        logs: { focusedBox: logsFocusedBox }
       }),
     [focusedView, githubFocusedBox, jiraState, modalOpen, logsFocusedBox]
   );

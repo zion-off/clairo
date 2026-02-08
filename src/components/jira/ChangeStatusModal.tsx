@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import SelectInput from 'ink-select-input';
 import {
+  JiraAuth,
+  JiraTransition,
   applyTransition,
   getJiraCredentials,
   getJiraSiteUrl,
-  getTransitions,
-  JiraAuth,
-  JiraTransition,
+  getTransitions
 } from '../../lib/jira/index.js';
 
 type Props = {
@@ -87,11 +87,14 @@ export default function ChangeStatusModal({ repoPath, ticketKey, currentStatus, 
 
   const items = transitions.map((t) => ({
     label: t.name,
-    value: t.id,
+    value: t.id
   }));
 
   // Find initial index based on current status (match transition target)
-  const initialIndex = Math.max(0, transitions.findIndex((t) => t.to.name === currentStatus));
+  const initialIndex = Math.max(
+    0,
+    transitions.findIndex((t) => t.to.name === currentStatus)
+  );
 
   return (
     <Box flexDirection="column" borderStyle="round" borderColor="yellow" paddingX={1} paddingY={1}>
@@ -107,9 +110,7 @@ export default function ChangeStatusModal({ repoPath, ticketKey, currentStatus, 
         </Box>
       )}
 
-      {!loading && !error && transitions.length === 0 && (
-        <Text dimColor>No available transitions</Text>
-      )}
+      {!loading && !error && transitions.length === 0 && <Text dimColor>No available transitions</Text>}
 
       {!loading && !error && transitions.length > 0 && !applying && (
         <Box marginTop={1} flexDirection="column">

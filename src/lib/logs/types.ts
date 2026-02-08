@@ -6,7 +6,7 @@ export type LogEntry = {
 };
 
 export type LogFile = {
-  date: string;      // YYYY-MM-DD
-  filename: string;  // YYYY-MM-DD.md
+  date: string; // YYYY-MM-DD
+  filename: string; // YYYY-MM-DD.md
   isToday: boolean;
 };
