@@ -2,7 +2,16 @@ import open from 'open';
 import { useRef } from 'react';
 import { Box, Text, useInput, useStdout } from 'ink';
 import { ScrollView, ScrollViewRef } from 'ink-scroll-view';
-import { PRDetails, StatusCheck } from '../../lib/github/index.js';
+import {
+  CHECK_COLORS,
+  CHECK_ICONS,
+  CHECK_SORT_ORDER,
+  PRDetails,
+  StatusCheck,
+  resolveCheckStatus,
+  resolveMergeDisplay,
+  resolveReviewDisplay
+} from '../../lib/github/index.js';
 import Markdown from '../ui/Markdown.js';
 
 type Props = {
@@ -12,57 +21,6 @@ type Props = {
   isFocused: boolean;
 };
 
-function getCheckColor(check: StatusCheck): string | undefined {
-  const conclusion = check.conclusion ?? check.state;
-  if (conclusion === 'SUCCESS') return 'green';
-  if (conclusion === 'FAILURE' || conclusion === 'ERROR') return 'red';
-  if (conclusion === 'SKIPPED' || conclusion === 'NEUTRAL') return 'gray';
-  if (
-    conclusion === 'PENDING' ||
-    check.status === 'IN_PROGRESS' ||
-    check.status === 'QUEUED' ||
-    check.status === 'WAITING'
-  )
-    return 'yellow';
-  if (check.status === 'COMPLETED') return 'green';
-  return undefined;
-}
-
-function getCheckIcon(check: StatusCheck): string {
-  const conclusion = check.conclusion ?? check.state;
-  if (conclusion === 'SUCCESS') return '✓';
-  if (conclusion === 'FAILURE' || conclusion === 'ERROR') return '✗';
-  if (conclusion === 'SKIPPED' || conclusion === 'NEUTRAL') return '○';
-  if (
-    conclusion === 'PENDING' ||
-    check.status === 'IN_PROGRESS' ||
-    check.status === 'QUEUED' ||
-    check.status === 'WAITING'
-  )
-    return '●';
-  if (check.status === 'COMPLETED') return '✓';
-  return '?';
-}
-
-function getCheckSortOrder(check: StatusCheck): number {
-  const conclusion = check.conclusion ?? check.state;
-  // Failed first
-  if (conclusion === 'FAILURE' || conclusion === 'ERROR') return 0;
-  // Then in-progress/pending
-  if (
-    conclusion === 'PENDING' ||
-    check.status === 'IN_PROGRESS' ||
-    check.status === 'QUEUED' ||
-    check.status === 'WAITING'
-  )
-    return 1;
-  // Then skipped
-  if (conclusion === 'SKIPPED' || conclusion === 'NEUTRAL') return 2;
-  // Then passed
-  if (conclusion === 'SUCCESS' || check.status === 'COMPLETED') return 3;
-  return 4;
-}
-
 export default function PRDetailsBox({ pr, loading, error, isFocused }: Props) {
   const scrollRef = useRef<ScrollViewRef>(null);
 
@@ -71,19 +29,8 @@ export default function PRDetailsBox({ pr, loading, error, isFocused }: Props) {
 
   const displayTitle = pr ? `${title} - #${pr.number}` : title;
 
-  const reviewStatus = pr?.reviewDecision ?? 'PENDING';
-  const reviewColor = reviewStatus === 'APPROVED' ? 'green' : reviewStatus === 'CHANGES_REQUESTED' ? 'red' : 'yellow';
-
-  // For merged/closed PRs, show state instead of mergeable status
-  const getMergeDisplay = () => {
-    if (!pr) return { text: 'UNKNOWN', color: 'yellow' };
-    if (pr.state === 'MERGED') return { text: 'MERGED', color: 'magenta' };
-    if (pr.state === 'CLOSED') return { text: 'CLOSED', color: 'red' };
-    if (pr.mergeable === 'MERGEABLE') return { text: 'MERGEABLE', color: 'green' };
-    if (pr.mergeable === 'CONFLICTING') return { text: 'CONFLICTING', color: 'red' };
-    return { text: pr.mergeable ?? 'UNKNOWN', color: 'yellow' };
-  };
-  const mergeDisplay = getMergeDisplay();
+  const reviewDisplay = resolveReviewDisplay(pr?.reviewDecision ?? null);
+  const mergeDisplay = resolveMergeDisplay(pr);
 
   useInput(
     (input, key) => {
@@ -135,7 +82,7 @@ export default function PRDetailsBox({ pr, loading, error, isFocused }: Props) {
 
                 <Box marginTop={1}>
                   <Text dimColor>Review: </Text>
-                  <Text color={reviewColor}>{reviewStatus}</Text>
+                  <Text color={reviewDisplay.color}>{reviewDisplay.text}</Text>
                   <Text> | </Text>
                   <Text dimColor>Status: </Text>
                   <Text color={mergeDisplay.color}>{mergeDisplay.text}</Text>
@@ -203,14 +150,15 @@ export default function PRDetailsBox({ pr, loading, error, isFocused }: Props) {
                         }, new Map<string, StatusCheck>())
                         .values() ?? []
                     )
-                      .sort((a, b) => getCheckSortOrder(a) - getCheckSortOrder(b))
+                      .sort((a, b) => CHECK_SORT_ORDER[resolveCheckStatus(a)] - CHECK_SORT_ORDER[resolveCheckStatus(b)])
                       .map((check, idx) => {
                         const jobName = check.name ?? check.context;
                         const displayName = check.workflowName ? `${check.workflowName} / ${jobName}` : jobName;
+                        const status = resolveCheckStatus(check);
                         return (
-                          <Text key={idx} color={getCheckColor(check)}>
+                          <Text key={idx} color={CHECK_COLORS[status]}>
                             {'  '}
-                            {getCheckIcon(check)} {displayName}
+                            {CHECK_ICONS[status]} {displayName}
                           </Text>
                         );
                       })}

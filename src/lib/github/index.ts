@@ -31,6 +31,48 @@ export type StatusCheck = {
   workflowName?: string;
 };
 
+export type CheckStatus = 'success' | 'failure' | 'pending' | 'skipped';
+
+export function resolveCheckStatus(check: StatusCheck): CheckStatus {
+  const conclusion = check.conclusion ?? check.state;
+  if (conclusion === 'SUCCESS' || check.status === 'COMPLETED') return 'success';
+  if (conclusion === 'FAILURE' || conclusion === 'ERROR') return 'failure';
+  if (conclusion === 'SKIPPED' || conclusion === 'NEUTRAL') return 'skipped';
+  if (
+    conclusion === 'PENDING' ||
+    check.status === 'IN_PROGRESS' ||
+    check.status === 'QUEUED' ||
+    check.status === 'WAITING'
+  )
+    return 'pending';
+  return 'pending';
+}
+
+export const CHECK_COLORS: Record<CheckStatus, string> = {
+  success: 'green',
+  failure: 'red',
+  pending: 'yellow',
+  skipped: 'gray'
+};
+export const CHECK_ICONS: Record<CheckStatus, string> = { success: '✓', failure: '✗', pending: '●', skipped: '○' };
+export const CHECK_SORT_ORDER: Record<CheckStatus, number> = { failure: 0, pending: 1, skipped: 2, success: 3 };
+
+export function resolveReviewDisplay(reviewDecision: string | null): { text: string; color: string } {
+  const status = reviewDecision ?? 'PENDING';
+  if (status === 'APPROVED') return { text: status, color: 'green' };
+  if (status === 'CHANGES_REQUESTED') return { text: status, color: 'red' };
+  return { text: status, color: 'yellow' };
+}
+
+export function resolveMergeDisplay(pr: PRDetails | null): { text: string; color: string } {
+  if (!pr) return { text: 'UNKNOWN', color: 'yellow' };
+  if (pr.state === 'MERGED') return { text: 'MERGED', color: 'magenta' };
+  if (pr.state === 'CLOSED') return { text: 'CLOSED', color: 'red' };
+  if (pr.mergeable === 'MERGEABLE') return { text: 'MERGEABLE', color: 'green' };
+  if (pr.mergeable === 'CONFLICTING') return { text: 'CONFLICTING', color: 'red' };
+  return { text: pr.mergeable ?? 'UNKNOWN', color: 'yellow' };
+}
+
 export type PRDetails = {
   number: number;
   title: string;
