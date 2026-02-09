@@ -18,14 +18,14 @@ type Props = {
   pr: PRDetails | null;
   loading: boolean;
   error?: string;
-  isFocused: boolean;
+  isActive: boolean;
 };
 
-export default function PRDetailsBox({ pr, loading, error, isFocused }: Props) {
+export default function PRDetailsBox({ pr, loading, error, isActive }: Props) {
   const scrollRef = useRef<ScrollViewRef>(null);
 
   const title = '[3] PR Details';
-  const borderColor = isFocused ? 'yellow' : undefined;
+  const borderColor = isActive ? 'yellow' : undefined;
 
   const displayTitle = pr ? `${title} - #${pr.number}` : title;
 
@@ -44,7 +44,7 @@ export default function PRDetailsBox({ pr, loading, error, isFocused }: Props) {
         open(pr.url).catch(() => {});
       }
     },
-    { isActive: isFocused }
+    { isActive }
   );
 
   // Get terminal width for responsive border

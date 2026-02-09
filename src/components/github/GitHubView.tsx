@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { TitledBox } from '@mishieck/ink-titled-box';
 import { Box, Text, useInput } from 'ink';
 import { GitHubFocusedBox } from '../../constants/github.js';
-import { useGitRepo, usePRPolling, usePullRequests } from '../../hooks/github/index.js';
+import { useGitRepo, usePullRequests } from '../../hooks/github/index.js';
 import { duckEvents } from '../../lib/duckEvents.js';
 import { findRemoteWithBranch } from '../../lib/github/git.js';
 import { openPRCreationPage } from '../../lib/github/index.js';
@@ -21,7 +21,6 @@ type Props = {
 export default function GitHubView({ isFocused, onFocusedBoxChange, onLogUpdated }: Props) {
   const repo = useGitRepo();
   const pullRequests = usePullRequests();
-  const polling = usePRPolling();
 
   const [focusedBox, setFocusedBox] = useState<GitHubFocusedBox>('remotes');
 
@@ -59,20 +58,16 @@ export default function GitHubView({ isFocused, onFocusedBoxChange, onLogUpdated
     [pullRequests.selectPR, repo.currentRepoSlug]
   );
 
-  // Store latest values in ref to avoid huge dependency array
-  const createPRContext = useRef({ repo, pullRequests, onLogUpdated });
-  createPRContext.current = { repo, pullRequests, onLogUpdated };
+  const onLogUpdatedRef = useRef(onLogUpdated);
+  onLogUpdatedRef.current = onLogUpdated;
 
   const handleCreatePR = useCallback(() => {
-    const { repo, pullRequests } = createPRContext.current;
-
     if (!repo.currentBranch) {
       pullRequests.setError('prs', 'No branch detected');
       duckEvents.emit('error');
       return;
     }
 
-    // Find which remote has the branch pushed
     const remoteResult = findRemoteWithBranch(repo.currentBranch);
     if (!remoteResult.success) {
       pullRequests.setError('prs', 'Push your branch to a remote first');
@@ -80,7 +75,6 @@ export default function GitHubView({ isFocused, onFocusedBoxChange, onLogUpdated
       return;
     }
 
-    // Open GitHub PR creation page in browser
     openPRCreationPage(remoteResult.data.owner, repo.currentBranch, (error) => {
       if (error) {
         pullRequests.setError('prs', `Failed to create PR: ${error.message}`);
@@ -88,35 +82,23 @@ export default function GitHubView({ isFocused, onFocusedBoxChange, onLogUpdated
       }
     });
 
-    // Start polling for new PRs
     if (!repo.currentRepoSlug) return;
 
-    polling.startPolling({
-      branch: repo.currentBranch,
-      repoSlug: repo.currentRepoSlug,
-      existingPRNumbers: pullRequests.prs.map((pr) => pr.number),
-      onPRsUpdated: (prs) => {
-        pullRequests.setPrs(prs);
-      },
-      onNewPR: (newPR) => {
-        const ctx = createPRContext.current;
-        // Get linked Jira tickets for logging
-        const tickets =
-          ctx.repo.repoPath && ctx.repo.currentBranch
-            ? getLinkedTickets(ctx.repo.repoPath, ctx.repo.currentBranch).map((t) => t.key)
-            : [];
+    const repoPath = repo.repoPath;
+    const branch = repo.currentBranch;
+    const repoSlug = repo.currentRepoSlug;
 
+    pullRequests.pollForNewPR({
+      branch,
+      repoSlug,
+      onNewPR: (newPR) => {
+        const tickets = repoPath && branch ? getLinkedTickets(repoPath, branch).map((t) => t.key) : [];
         logPRCreated(newPR.number, newPR.title, tickets);
         duckEvents.emit('pr:opened');
-        ctx.onLogUpdated?.();
-        ctx.pullRequests.setSelectedPR(newPR);
-        // Fetch details for the new PR
-        if (ctx.repo.currentRepoSlug) {
-          ctx.pullRequests.refreshDetails(newPR, ctx.repo.currentRepoSlug);
-        }
+        onLogUpdatedRef.current?.();
       }
     });
-  }, [polling.startPolling]);
+  }, [repo.currentBranch, repo.currentRepoSlug, repo.repoPath, pullRequests.setError, pullRequests.pollForNewPR]);
 
   useInput(
     (input) => {
@@ -173,7 +155,7 @@ export default function GitHubView({ isFocused, onFocusedBoxChange, onLogUpdated
         pr={pullRequests.prDetails}
         loading={pullRequests.loading.details}
         error={pullRequests.errors.details}
-        isFocused={isFocused && focusedBox === 'details'}
+        isActive={isFocused && focusedBox === 'details'}
       />
     </Box>
   );

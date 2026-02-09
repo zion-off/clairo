@@ -1,11 +1,13 @@
 import { useCallback, useState } from 'react';
 import { duckEvents } from '../../lib/duckEvents.js';
 import { PRDetails, PRListItem, getPRDetails, listPRsForBranch } from '../../lib/github/index.js';
+import { usePRPolling } from './usePRPolling.js';
 
 export function usePullRequests() {
   const [prs, setPrs] = useState<PRListItem[]>([]);
   const [selectedPR, setSelectedPR] = useState<PRListItem | null>(null);
   const [prDetails, setPrDetails] = useState<PRDetails | null>(null);
+  const polling = usePRPolling();
 
   const [loading, setLoading] = useState({
     prs: false,
@@ -88,6 +90,27 @@ export function usePullRequests() {
     setErrors((prev) => ({ ...prev, [key]: message }));
   }, []);
 
+  const pollForNewPR = useCallback(
+    (options: { branch: string; repoSlug: string; onNewPR?: (newPR: PRListItem) => void }) => {
+      const existingPRNumbers = prs.map((pr) => pr.number);
+
+      polling.startPolling({
+        branch: options.branch,
+        repoSlug: options.repoSlug,
+        existingPRNumbers,
+        onPRsUpdated: (updatedPrs) => {
+          setPrs(updatedPrs);
+        },
+        onNewPR: (newPR) => {
+          setSelectedPR(newPR);
+          refreshDetails(newPR, options.repoSlug);
+          options.onNewPR?.(newPR);
+        }
+      });
+    },
+    [prs, polling.startPolling, refreshDetails]
+  );
+
   return {
     prs,
     selectedPR,
@@ -99,8 +122,8 @@ export function usePullRequests() {
     loading,
     errors,
     setError,
-    // Expose setters for cases where external code needs to update state directly
-    setPrs,
-    setSelectedPR
+    pollForNewPR,
+    stopPolling: polling.stopPolling,
+    isPolling: polling.isPolling
   };
 }
