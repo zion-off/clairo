@@ -32,6 +32,16 @@ setLoading((prev) => ({ ...prev, a: true }));
 
 // Keyboard handling with focus
 useInput((input, key) => { ... }, { isActive: isFocused && !showModal });
+
+// Scrollable container - use flexBasis={0} with flexGrow={1} and overflow="hidden"
+// Without flexBasis={0}, the box starts from content's natural size and resizes as content scrolls
+<Box flexGrow={1} flexBasis={0} overflow="hidden">
+  <ScrollView ref={scrollRef}>
+    {/* content */}
+  </ScrollView>
+</Box>
+// If there's a footer (e.g. hint text) below the scroll area, wrap ScrollView
+// in its own Box with flexGrow={1} flexBasis={0} overflow="hidden" so the footer isn't clipped
 ```
 
 ## Adding Features
