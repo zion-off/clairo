@@ -5,7 +5,7 @@ import { GitHubFocusedBox } from '../../constants/github.js';
 import { useGitRepo, usePRPolling, usePullRequests } from '../../hooks/github/index.js';
 import { duckEvents } from '../../lib/duckEvents.js';
 import { findRemoteWithBranch } from '../../lib/github/git.js';
-import { getRepoFromRemote, openPRCreationPage } from '../../lib/github/index.js';
+import { openPRCreationPage } from '../../lib/github/index.js';
 import { getLinkedTickets } from '../../lib/jira/index.js';
 import { logPRCreated } from '../../lib/logs/logger.js';
 import PRDetailsBox from './PRDetailsBox.js';
@@ -25,20 +25,9 @@ export default function GitHubView({ isFocused, onFocusedBoxChange, onLogUpdated
 
   const [focusedBox, setFocusedBox] = useState<GitHubFocusedBox>('remotes');
 
-  // Track last fetched context to detect changes
-  const lastFetchedRef = useRef<{ branch: string; repoSlug: string } | null>(null);
-
   // Effect to fetch PRs when repo data is ready or branch/repoSlug changes
   useEffect(() => {
     if (repo.loading || !repo.currentBranch || !repo.currentRepoSlug) return;
-
-    const current = { branch: repo.currentBranch, repoSlug: repo.currentRepoSlug };
-    const last = lastFetchedRef.current;
-
-    // Skip if we already fetched for this branch/repoSlug combo
-    if (last && last.branch === current.branch && last.repoSlug === current.repoSlug) return;
-
-    lastFetchedRef.current = current;
     pullRequests.fetchPRsAndDetails(repo.currentBranch, repo.currentRepoSlug);
   }, [repo.loading, repo.currentBranch, repo.currentRepoSlug, pullRequests.fetchPRsAndDetails]);
 
@@ -54,23 +43,12 @@ export default function GitHubView({ isFocused, onFocusedBoxChange, onLogUpdated
     onFocusedBoxChange?.(focusedBox);
   }, [focusedBox, onFocusedBoxChange]);
 
-  // Handle remote selection - direct user action, fetch immediately
+  // Handle remote selection - selectRemote updates currentRepoSlug, triggering the fetch effect
   const handleRemoteSelect = useCallback(
     (remoteName: string) => {
       repo.selectRemote(remoteName);
-
-      // Compute repoSlug and fetch immediately (don't wait for effect)
-      const remote = repo.remotes.find((r) => r.name === remoteName);
-      if (!remote || !repo.currentBranch) return;
-
-      const repoSlug = getRepoFromRemote(remote.url);
-      if (!repoSlug) return;
-
-      // Update lastFetchedRef to prevent effect from double-fetching
-      lastFetchedRef.current = { branch: repo.currentBranch, repoSlug };
-      pullRequests.fetchPRsAndDetails(repo.currentBranch, repoSlug);
     },
-    [repo.selectRemote, repo.remotes, repo.currentBranch, pullRequests.fetchPRsAndDetails]
+    [repo.selectRemote]
   );
 
   // Handle PR selection
