@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { TitledBox } from '@mishieck/ink-titled-box';
 import { Box, Text, useInput } from 'ink';
 import { ScrollView, ScrollViewRef } from 'ink-scroll-view';
@@ -114,8 +114,15 @@ export default function LogViewerBox({ date, content, isActive, onRefresh, onLog
         });
       }
     },
-    { isActive: isActive }
+    { isActive }
   );
+
+  // Cancel in-flight Claude process on unmount
+  useEffect(() => {
+    return () => {
+      claudeProcessRef.current?.cancel();
+    };
+  }, []);
 
   const handleInputSubmit = (value: string) => {
     if (!date || !value.trim()) {

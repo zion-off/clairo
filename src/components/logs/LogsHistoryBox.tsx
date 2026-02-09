@@ -42,7 +42,7 @@ export default function LogsHistoryBox({
         }
       }
     },
-    { isActive: isActive }
+    { isActive }
   );
 
   return (
