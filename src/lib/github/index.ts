@@ -166,20 +166,14 @@ export async function listPRsForBranch(branch: string, repo: string): Promise<Gi
     // gh pr view failed - branch might not have a PR or isn't linked
   }
 
-  // Option 1 fallback: Fetch all PRs and filter by branch name
+  // Option 1 fallback: Query PRs by head branch name (server-side filter)
   try {
     const { stdout } = await execAsync(
-      `gh pr list --state open --json ${fields},headRefName --repo "${repo}" 2>/dev/null`
+      `gh pr list --state open --head "${branch}" --json ${fields} --repo "${repo}" 2>/dev/null`
     );
-    const allPrs = JSON.parse(stdout) as (PRListItem & { headRefName: string })[];
+    const prs = JSON.parse(stdout) as PRListItem[];
 
-    // Filter by branch name (handles fork format like "username:branch")
-    const prs = allPrs.filter((pr) => pr.headRefName === branch || pr.headRefName.endsWith(`:${branch}`));
-
-    // Remove headRefName from result (not part of PRListItem type)
-    const result = prs.map(({ headRefName: _headRefName, ...rest }) => rest);
-
-    return { success: true, data: result };
+    return { success: true, data: prs };
   } catch {
     return { success: false, error: 'Failed to fetch PRs', errorType: 'api_error' };
   }
