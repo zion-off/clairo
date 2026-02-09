@@ -17,12 +17,12 @@ import Markdown from '../ui/Markdown.js';
 type Props = {
   date: string | null;
   content: string | null;
-  isFocused: boolean;
+  isActive: boolean;
   onRefresh: () => void;
   onLogCreated: () => void;
 };
 
-export default function LogViewerBox({ date, content, isFocused, onRefresh, onLogCreated }: Props) {
+export default function LogViewerBox({ date, content, isActive, onRefresh, onLogCreated }: Props) {
   const scrollRef = useRef<ScrollViewRef>(null);
   const [isInputMode, setIsInputMode] = useState(false);
   const [inputValue, setInputValue] = useState('');
@@ -31,7 +31,7 @@ export default function LogViewerBox({ date, content, isFocused, onRefresh, onLo
   const claudeProcessRef = useRef<ClaudeProcess | null>(null);
 
   const title = '[6] Log Content';
-  const borderColor = isFocused ? 'yellow' : undefined;
+  const borderColor = isActive ? 'yellow' : undefined;
   const displayTitle = date ? `${title} - ${date}.md` : title;
 
   useInput(
@@ -114,7 +114,7 @@ export default function LogViewerBox({ date, content, isFocused, onRefresh, onLo
         });
       }
     },
-    { isActive: isFocused }
+    { isActive: isActive }
   );
 
   const handleInputSubmit = (value: string) => {

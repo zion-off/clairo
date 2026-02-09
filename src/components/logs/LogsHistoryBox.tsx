@@ -10,7 +10,7 @@ type Props = {
   highlightedIndex: number;
   onHighlight: (index: number) => void;
   onSelect: (date: string) => void;
-  isFocused: boolean;
+  isActive: boolean;
 };
 
 export default function LogsHistoryBox({
@@ -19,11 +19,11 @@ export default function LogsHistoryBox({
   highlightedIndex,
   onHighlight,
   onSelect,
-  isFocused
+  isActive
 }: Props) {
   const scrollRef = useScrollToIndex(highlightedIndex);
   const title = '[5] Logs';
-  const borderColor = isFocused ? 'yellow' : undefined;
+  const borderColor = isActive ? 'yellow' : undefined;
 
   useInput(
     (input, key) => {
@@ -42,7 +42,7 @@ export default function LogsHistoryBox({
         }
       }
     },
-    { isActive: isFocused }
+    { isActive: isActive }
   );
 
   return (

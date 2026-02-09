@@ -22,13 +22,13 @@ import TicketItem from './TicketItem.js';
 type JiraModalType = 'configure' | 'link' | 'status';
 
 type Props = {
-  isFocused: boolean;
+  isActive: boolean;
   onModalChange?: (isOpen: boolean) => void;
   onJiraStateChange?: (state: JiraState) => void;
   onLogUpdated?: () => void;
 };
 
-export default function JiraView({ isFocused, onModalChange, onJiraStateChange, onLogUpdated }: Props) {
+export default function JiraView({ isActive, onModalChange, onJiraStateChange, onLogUpdated }: Props) {
   const repo = useGitRepo();
   const jira = useJiraTickets();
   const modal = useModal<JiraModalType>();
@@ -52,12 +52,12 @@ export default function JiraView({ isFocused, onModalChange, onJiraStateChange, 
 
   // When focus is gained, refresh branch; when lost, close modal
   useEffect(() => {
-    if (isFocused) {
+    if (isActive) {
       repo.refreshBranch();
     } else {
       modal.close();
     }
-  }, [isFocused, repo.refreshBranch, modal.close]);
+  }, [isActive, repo.refreshBranch, modal.close]);
 
   // Notify parent when modal state changes
   useEffect(() => {
@@ -155,7 +155,7 @@ export default function JiraView({ isFocused, onModalChange, onJiraStateChange, 
         if (input === 'y') handleCopyLink();
       }
     },
-    { isActive: isFocused && !modal.isOpen }
+    { isActive: isActive && !modal.isOpen }
   );
 
   // Early return for non-git repo
@@ -224,7 +224,7 @@ export default function JiraView({ isFocused, onModalChange, onJiraStateChange, 
 
   // Main view
   const title = '[4] Jira';
-  const borderColor = isFocused ? 'yellow' : undefined;
+  const borderColor = isActive ? 'yellow' : undefined;
 
   return (
     <TitledBox borderStyle="round" titles={[title]} borderColor={borderColor} flexShrink={0}>

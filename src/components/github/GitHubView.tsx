@@ -13,12 +13,12 @@ import PullRequestsBox from './PullRequestsBox.js';
 import RemotesBox from './RemotesBox.js';
 
 type Props = {
-  isFocused: boolean;
+  isActive: boolean;
   onFocusedBoxChange?: (box: GitHubFocusedBox) => void;
   onLogUpdated?: () => void;
 };
 
-export default function GitHubView({ isFocused, onFocusedBoxChange, onLogUpdated }: Props) {
+export default function GitHubView({ isActive, onFocusedBoxChange, onLogUpdated }: Props) {
   const repo = useGitRepo();
   const pullRequests = usePullRequests();
 
@@ -32,10 +32,10 @@ export default function GitHubView({ isFocused, onFocusedBoxChange, onLogUpdated
 
   // Refresh branch when view gains focus (detect external branch switches)
   useEffect(() => {
-    if (isFocused) {
+    if (isActive) {
       repo.refreshBranch();
     }
-  }, [isFocused, repo.refreshBranch]);
+  }, [isActive, repo.refreshBranch]);
 
   // Notify parent of focused box changes
   useEffect(() => {
@@ -119,7 +119,7 @@ export default function GitHubView({ isFocused, onFocusedBoxChange, onLogUpdated
         handleCreatePR();
       }
     },
-    { isActive: isFocused }
+    { isActive: isActive }
   );
 
   if (repo.isRepo === false) {
@@ -138,7 +138,7 @@ export default function GitHubView({ isFocused, onFocusedBoxChange, onLogUpdated
         onSelect={handleRemoteSelect}
         loading={repo.loading}
         error={repo.error}
-        isActive={isFocused && focusedBox === 'remotes'}
+        isActive={isActive && focusedBox === 'remotes'}
       />
       <PullRequestsBox
         prs={pullRequests.prs}
@@ -149,13 +149,13 @@ export default function GitHubView({ isFocused, onFocusedBoxChange, onLogUpdated
         error={pullRequests.errors.prs}
         branch={repo.currentBranch}
         repoSlug={repo.currentRepoSlug}
-        isActive={isFocused && focusedBox === 'prs'}
+        isActive={isActive && focusedBox === 'prs'}
       />
       <PRDetailsBox
         pr={pullRequests.prDetails}
         loading={pullRequests.loading.details}
         error={pullRequests.errors.details}
-        isActive={isFocused && focusedBox === 'details'}
+        isActive={isActive && focusedBox === 'details'}
       />
     </Box>
   );

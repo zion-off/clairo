@@ -6,13 +6,13 @@ import LogViewerBox from './LogViewerBox.js';
 import LogsHistoryBox from './LogsHistoryBox.js';
 
 type Props = {
-  isFocused: boolean;
+  isActive: boolean;
   refreshKey?: number;
   focusedBox: LogsFocusedBox;
   onFocusedBoxChange: (box: LogsFocusedBox) => void;
 };
 
-export default function LogsView({ isFocused, refreshKey, focusedBox, onFocusedBoxChange }: Props) {
+export default function LogsView({ isActive, refreshKey, focusedBox, onFocusedBoxChange }: Props) {
   const logs = useLogs();
 
   // React to external log updates (from other views logging actions)
@@ -28,7 +28,7 @@ export default function LogsView({ isFocused, refreshKey, focusedBox, onFocusedB
       if (input === '5') onFocusedBoxChange('history');
       if (input === '6') onFocusedBoxChange('viewer');
     },
-    { isActive: isFocused }
+    { isActive: isActive }
   );
 
   return (
@@ -39,12 +39,12 @@ export default function LogsView({ isFocused, refreshKey, focusedBox, onFocusedB
         highlightedIndex={logs.highlightedIndex}
         onHighlight={logs.setHighlightedIndex}
         onSelect={logs.selectDate}
-        isFocused={isFocused && focusedBox === 'history'}
+        isActive={isActive && focusedBox === 'history'}
       />
       <LogViewerBox
         date={logs.selectedDate}
         content={logs.logContent}
-        isFocused={isFocused && focusedBox === 'viewer'}
+        isActive={isActive && focusedBox === 'viewer'}
         onRefresh={logs.refresh}
         onLogCreated={logs.handleLogCreated}
       />

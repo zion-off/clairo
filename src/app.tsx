@@ -70,12 +70,12 @@ export default function App() {
       <Box flexGrow={1} flexDirection="row" columnGap={1}>
         <Box flexDirection="column" flexGrow={1} flexBasis={0}>
           <GitHubView
-            isFocused={focusedView === 'github'}
+            isActive={focusedView === 'github'}
             onFocusedBoxChange={setGithubFocusedBox}
             onLogUpdated={handleLogUpdated}
           />
           <JiraView
-            isFocused={focusedView === 'jira'}
+            isActive={focusedView === 'jira'}
             onModalChange={setModalOpen}
             onJiraStateChange={setJiraState}
             onLogUpdated={handleLogUpdated}
@@ -83,7 +83,7 @@ export default function App() {
         </Box>
         <Box flexDirection="column" flexGrow={1} flexBasis={0}>
           <LogsView
-            isFocused={focusedView === 'logs'}
+            isActive={focusedView === 'logs'}
             refreshKey={logRefreshKey}
             focusedBox={logsFocusedBox}
             onFocusedBoxChange={setLogsFocusedBox}
