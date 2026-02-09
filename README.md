@@ -8,7 +8,7 @@ dashboard tui for github PRs, jira tickets, and daily logs.
 - claude code integration (requires claude code to be set up) for generating standup notes
 - link jira tickets and change ticket status from the terminal
 - auto jira ticket detection based on branch name
-- daily logs that update automatically with tui actions that can be used for generateStandupNotes
+- daily logs that update automatically with tui actions that can be used to generate standup notes
 
 ## requirements
 
