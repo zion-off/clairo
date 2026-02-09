@@ -33,6 +33,7 @@ export default function JiraView({ isActive, onModalChange, onJiraStateChange, o
   const jira = useJiraTickets();
   const modal = useModal<JiraModalType>();
   const nav = useListNavigation({ items: jira.tickets });
+  const currentTicket = jira.tickets[nav.index] ?? null;
 
   // Track last initialized context to prevent re-initialization
   const lastInitRef = useRef<{ branch: string } | null>(null);
@@ -82,41 +83,33 @@ export default function JiraView({ isActive, onModalChange, onJiraStateChange, o
     if (success) modal.close();
   };
 
+  const getTicketUrl = () => {
+    if (!repo.repoPath || !currentTicket) return null;
+    const siteUrl = getJiraSiteUrl(repo.repoPath);
+    return siteUrl ? `${siteUrl}/browse/${currentTicket.key}` : null;
+  };
+
   const handleUnlinkTicket = () => {
-    if (!repo.repoPath || !repo.currentBranch || jira.tickets.length === 0) return;
-    const ticket = jira.tickets[nav.index];
-    if (ticket) {
-      jira.unlinkTicket(repo.repoPath, repo.currentBranch, ticket.key);
-      jira.refreshTickets(repo.repoPath, repo.currentBranch);
-      nav.prev();
-    }
+    if (!repo.repoPath || !repo.currentBranch || !currentTicket) return;
+    jira.unlinkTicket(repo.repoPath, repo.currentBranch, currentTicket.key);
+    jira.refreshTickets(repo.repoPath, repo.currentBranch);
+    nav.prev();
   };
 
   const handleOpenInBrowser = () => {
-    if (!repo.repoPath || jira.tickets.length === 0) return;
-    const ticket = jira.tickets[nav.index];
-    const siteUrl = getJiraSiteUrl(repo.repoPath);
-    if (ticket && siteUrl) {
-      open(`${siteUrl}/browse/${ticket.key}`).catch(() => {});
-    }
+    const url = getTicketUrl();
+    if (url) open(url).catch(() => {});
   };
 
   const handleCopyLink = () => {
-    if (!repo.repoPath || jira.tickets.length === 0) return;
-    const ticket = jira.tickets[nav.index];
-    const siteUrl = getJiraSiteUrl(repo.repoPath);
-    if (ticket && siteUrl) {
-      copyToClipboard(`${siteUrl}/browse/${ticket.key}`);
-    }
+    const url = getTicketUrl();
+    if (url) copyToClipboard(url);
   };
 
   const handleStatusComplete = (newStatus: string) => {
-    if (!repo.repoPath || !repo.currentBranch) return;
-    const ticket = jira.tickets[nav.index];
-    if (!ticket) return;
-
-    updateTicketStatus(repo.repoPath, repo.currentBranch, ticket.key, newStatus);
-    logJiraStatusChanged(ticket.key, ticket.summary, ticket.status, newStatus);
+    if (!repo.repoPath || !repo.currentBranch || !currentTicket) return;
+    updateTicketStatus(repo.repoPath, repo.currentBranch, currentTicket.key, newStatus);
+    logJiraStatusChanged(currentTicket.key, currentTicket.summary, currentTicket.status, newStatus);
     onLogUpdated?.();
     modal.close();
     jira.refreshTickets(repo.repoPath, repo.currentBranch);
@@ -207,14 +200,13 @@ export default function JiraView({ isActive, onModalChange, onJiraStateChange, o
     );
   }
 
-  if (modal.type === 'status' && repo.repoPath && repo.currentBranch && jira.tickets[nav.index]) {
-    const ticket = jira.tickets[nav.index];
+  if (modal.type === 'status' && repo.repoPath && repo.currentBranch && currentTicket) {
     return (
       <Box flexDirection="column" flexShrink={0}>
         <ChangeStatusModal
           repoPath={repo.repoPath}
-          ticketKey={ticket.key}
-          currentStatus={ticket.status}
+          ticketKey={currentTicket.key}
+          currentStatus={currentTicket.status}
           onComplete={handleStatusComplete}
           onCancel={modal.close}
         />
