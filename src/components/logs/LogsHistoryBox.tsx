@@ -35,7 +35,7 @@ export default function LogsHistoryBox({
       if (key.downArrow || input === 'j') {
         onHighlight(Math.min(logFiles.length - 1, highlightedIndex + 1));
       }
-      if (key.return) {
+      if (input === ' ') {
         const file = logFiles[highlightedIndex];
         if (file) {
           onSelect(file.date);
