@@ -96,6 +96,20 @@ export function runClaudePrompt(prompt: string): ClaudeProcess {
 }
 
 /**
+ * Generate PR title and description by letting Claude Code analyze the repo itself
+ */
+export function generatePRContent(): ClaudeProcess {
+  const prompt = `Your output will be used directly to pre-fill a GitHub pull request creation form. Analyze the current branch's changes and return ONLY a raw JSON object (no markdown fences, no explanation) with "title" and "body" fields.
+
+Rules:
+- "title": a concise PR title in imperative mood, under 72 characters
+- "body": a markdown PR description summarizing what changed and why. Use bullet points for multiple changes.
+- Do not include any text outside the JSON object
+- Do not add any "Co-Authored-By" or attribution lines`;
+  return runClaudePrompt(prompt);
+}
+
+/**
  * Generate standup notes from log content
  */
 export function generateStandupNotes(logContent: string): ClaudeProcess {

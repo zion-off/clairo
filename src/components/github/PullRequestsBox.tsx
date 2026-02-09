@@ -17,6 +17,7 @@ type Props = {
   branch: string | null;
   repoSlug: string | null;
   isActive: boolean;
+  isGeneratingPR?: boolean;
 };
 
 export default function PullRequestsBox({
@@ -28,7 +29,8 @@ export default function PullRequestsBox({
   error,
   branch,
   repoSlug,
-  isActive
+  isActive,
+  isGeneratingPR
 }: Props) {
   const [copied, setCopied] = useState(false);
   const selectedIndex = prs.findIndex((p) => p.number === selectedPR?.number);
@@ -80,6 +82,7 @@ export default function PullRequestsBox({
       <Box flexDirection="column" paddingX={1} flexGrow={1} overflow="hidden">
         {loading && <Text dimColor>Loading PRs...</Text>}
         {error && <Text color="red">{error}</Text>}
+        {isGeneratingPR && <Text color="yellow">Generating PR with Claude... (Esc to cancel)</Text>}
         {!loading && !error && (
           <ScrollView ref={scrollRef}>
             {prs.length === 0 && (

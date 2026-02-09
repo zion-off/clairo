@@ -1,4 +1,4 @@
-import { exec } from 'child_process';
+import { exec, execFile } from 'child_process';
 import { promisify } from 'util';
 
 const execAsync = promisify(exec);
@@ -246,6 +246,54 @@ export function openPRCreationPage(owner: string, branch: string, onComplete?: (
     // Emit resize to refresh TUI after returning from browser
     process.stdout.emit('resize');
     onComplete?.(error);
+  });
+}
+
+/**
+ * Open PR creation page with pre-filled title and body
+ */
+export function openPRCreationPageWithContent(
+  owner: string,
+  branch: string,
+  title: string,
+  body: string,
+  onComplete?: (error: Error | null) => void
+): void {
+  const headFlag = `${owner}:${branch}`;
+  const args = ['pr', 'create', '--web', '--head', headFlag, '--title', title, '--body', body];
+  execFile('gh', args, (error) => {
+    process.stdout.emit('resize');
+    onComplete?.(error);
+  });
+}
+
+/**
+ * Update an existing PR's title and body
+ */
+export function editPRDescription(
+  prNumber: number,
+  repo: string,
+  title: string,
+  body: string,
+  onComplete?: (error: Error | null) => void
+): void {
+  const args = [
+    'api',
+    `repos/${repo}/pulls/${prNumber}`,
+    '--method',
+    'PATCH',
+    '--field',
+    `title=${title}`,
+    '--field',
+    `body=${body}`
+  ];
+  execFile('gh', args, (error, _stdout, stderr) => {
+    if (error) {
+      const message = stderr?.trim() || error.message;
+      onComplete?.(new Error(message));
+    } else {
+      onComplete?.(null);
+    }
   });
 }
 
