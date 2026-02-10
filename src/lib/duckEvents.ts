@@ -7,7 +7,9 @@ export type DuckEvent =
   | 'error'
   | 'jira:transition'
   | 'jira:linked'
-  | 'jira:configured';
+  | 'jira:configured'
+  | 'jira:assigned'
+  | 'jira:unassigned';
 
 type DuckEventListener = (event: DuckEvent) => void;
 

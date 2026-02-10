@@ -32,7 +32,9 @@ const REACTION_MESSAGES: Record<DuckEvent, string[]> = {
   error: ['Uh oh...', 'There there...', '*concerned quacking*', 'Quack... not good.'],
   'jira:transition': ['Ticket moving!', 'Progress!', 'Workflow in motion!'],
   'jira:linked': ['Ticket linked!', 'Jira connection made!', 'Tracking enabled!'],
-  'jira:configured': ['Jira ready!', 'Integration complete!', 'Connected to Jira!']
+  'jira:configured': ['Jira ready!', 'Integration complete!', 'Connected to Jira!'],
+  'jira:assigned': ['Assigned!', 'On it!', 'Claimed!'],
+  'jira:unassigned': ['Unassigned!', 'Free agent!', 'Released!']
 };
 
 type DuckState = {

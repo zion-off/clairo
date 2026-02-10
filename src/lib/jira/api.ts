@@ -17,12 +17,13 @@ function createAuthHeader(email: string, apiToken: string): string {
 /**
  * Make an authenticated request to the Jira API
  */
-async function jiraFetch(
+export async function jiraFetch(
   auth: JiraAuth,
   endpoint: string,
-  options?: { method?: 'GET' | 'POST'; body?: unknown }
+  options?: { method?: 'GET' | 'POST' | 'PUT'; body?: unknown; apiPrefix?: string }
 ): Promise<{ ok: boolean; status: number; data?: unknown; error?: string }> {
-  const url = `${auth.siteUrl}/rest/api/3${endpoint}`;
+  const prefix = options?.apiPrefix ?? '/rest/api/3';
+  const url = `${auth.siteUrl}${prefix}${endpoint}`;
   const method = options?.method ?? 'GET';
 
   try {
@@ -80,6 +81,27 @@ export async function validateCredentials(auth: JiraAuth): Promise<JiraResult<un
   }
 
   return { success: true, data: result.data };
+}
+
+/**
+ * Get the current user's account ID
+ */
+export async function getCurrentUser(auth: JiraAuth): Promise<JiraResult<{ accountId: string; displayName: string }>> {
+  const result = await jiraFetch(auth, '/myself');
+
+  if (!result.ok) {
+    if (result.status === 401 || result.status === 403) {
+      return { success: false, error: 'Authentication failed', errorType: 'auth_error' };
+    }
+    return {
+      success: false,
+      error: result.error ?? 'Failed to fetch current user',
+      errorType: 'api_error'
+    };
+  }
+
+  const data = result.data as { accountId: string; displayName: string };
+  return { success: true, data: { accountId: data.accountId, displayName: data.displayName } };
 }
 
 /**
@@ -185,6 +207,103 @@ export async function applyTransition(
     return {
       success: false,
       error: result.error ?? 'Failed to apply transition',
+      errorType: 'api_error'
+    };
+  }
+
+  return { success: true, data: null };
+}
+
+export type JiraComment = {
+  id: string;
+  author: { displayName: string; accountId: string };
+  created: string;
+  updated: string;
+  body: unknown; // ADF document
+};
+
+export type JiraIssueDetail = {
+  key: string;
+  fields: {
+    summary: string;
+    status: { name: string };
+    assignee: { accountId: string; displayName: string } | null;
+    description: unknown; // ADF document
+    comment: {
+      comments: JiraComment[];
+      total: number;
+    };
+  };
+};
+
+/**
+ * Get a Jira issue with full detail fields (description, comments, assignee)
+ */
+export async function getIssueDetail(auth: JiraAuth, issueKey: string): Promise<JiraResult<JiraIssueDetail>> {
+  const result = await jiraFetch(auth, `/issue/${issueKey}?fields=summary,status,description,assignee,comment`);
+
+  if (!result.ok) {
+    if (result.status === 401 || result.status === 403) {
+      return { success: false, error: 'Authentication failed', errorType: 'auth_error' };
+    }
+    if (result.status === 404) {
+      return { success: false, error: `Issue ${issueKey} not found`, errorType: 'invalid_ticket' };
+    }
+    return {
+      success: false,
+      error: result.error ?? 'Failed to fetch issue details',
+      errorType: 'api_error'
+    };
+  }
+
+  return { success: true, data: result.data as JiraIssueDetail };
+}
+
+/**
+ * Assign an issue to a user
+ */
+export async function assignIssue(auth: JiraAuth, issueKey: string, accountId: string): Promise<JiraResult<null>> {
+  const result = await jiraFetch(auth, `/issue/${issueKey}/assignee`, {
+    method: 'PUT',
+    body: { accountId }
+  });
+
+  if (!result.ok) {
+    if (result.status === 401 || result.status === 403) {
+      return { success: false, error: 'Authentication failed', errorType: 'auth_error' };
+    }
+    if (result.status === 404) {
+      return { success: false, error: `Issue ${issueKey} not found`, errorType: 'invalid_ticket' };
+    }
+    return {
+      success: false,
+      error: result.error ?? 'Failed to assign issue',
+      errorType: 'api_error'
+    };
+  }
+
+  return { success: true, data: null };
+}
+
+/**
+ * Unassign an issue (remove assignee)
+ */
+export async function unassignIssue(auth: JiraAuth, issueKey: string): Promise<JiraResult<null>> {
+  const result = await jiraFetch(auth, `/issue/${issueKey}/assignee`, {
+    method: 'PUT',
+    body: { accountId: null }
+  });
+
+  if (!result.ok) {
+    if (result.status === 401 || result.status === 403) {
+      return { success: false, error: 'Authentication failed', errorType: 'auth_error' };
+    }
+    if (result.status === 404) {
+      return { success: false, error: `Issue ${issueKey} not found`, errorType: 'invalid_ticket' };
+    }
+    return {
+      success: false,
+      error: result.error ?? 'Failed to unassign issue',
       errorType: 'api_error'
     };
   }

@@ -11,12 +11,26 @@ export type LinkedTicket = {
   linkedAt: string;
 };
 
+export type JiraViewSource =
+  | { type: 'filter'; filterId: string }
+  | { type: 'jql'; jql: string }
+  | { type: 'board'; boardId: string };
+
+export type SavedJiraView = {
+  id: string;
+  name: string;
+  url: string;
+  source: JiraViewSource;
+  savedAt: string;
+};
+
 export type RepositoryConfig = {
   selectedRemote?: string;
   jiraSiteUrl?: string;
   jiraEmail?: string;
   jiraApiToken?: string;
   branchTickets?: Record<string, LinkedTicket[]>;
+  savedJiraViews?: SavedJiraView[];
 };
 
 export type Config = {

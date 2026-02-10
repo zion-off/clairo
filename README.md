@@ -4,11 +4,26 @@ dashboard tui for github PRs, jira tickets, and daily logs.
 
 ## features
 
-- branch aware github dashboard: see open PR details, create new PRs
-- claude code integration (requires claude code to be set up) for generating standup notes
-- link jira tickets and change ticket status from the terminal
-- auto jira ticket detection based on branch name
-- daily logs that update automatically with tui actions that can be used to generate standup notes
+- github dashboard
+  - configure and switch between remotes
+  - view open PRs with status, reviews, and checks
+  - see full PR details with description, labels, and assignees
+  - create new PRs from the terminal
+- jira integration
+  - auto ticket detection based on branch name
+  - link tickets and change status from the terminal
+  - save board, filter, or JQL views and browse issues
+  - sprint-grouped issue list with search, assignee filters, and pagination
+  - inline issue detail view with description and comments
+  - change ticket status, assign/unassign directly from the detail view
+- claude code integration (requires claude code to be set up)
+  - generate standup notes from daily logs
+  - generate PR title and description from your diff
+- daily logs
+  - automatically logged when you create PRs, change ticket status, or update assignees
+  - browse and view past logs
+  - add manual entries inline
+  - open logs in your editor for editing
 
 ## requirements
 

@@ -34,3 +34,21 @@ export function logJiraStatusChanged(
 
   appendToLog(today, entry);
 }
+
+/**
+ * Log a Jira ticket assignee change
+ */
+export function logJiraAssigneeChanged(
+  ticketKey: string,
+  ticketName: string,
+  action: 'assigned' | 'unassigned',
+  displayName?: string
+): void {
+  const timestamp = formatTimestamp();
+  const today = getTodayDate();
+
+  const detail = action === 'assigned' && displayName ? `Assigned to ${displayName}` : 'Unassigned';
+  const entry = `## ${timestamp} - Updated Jira ticket\n\n${ticketKey}: ${ticketName}\n${detail}\n\n`;
+
+  appendToLog(today, entry);
+}

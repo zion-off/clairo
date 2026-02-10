@@ -22,9 +22,12 @@ export default function TextInput({ value, onChange, placeholder, isActive, mask
         return;
       }
 
-      // Only accept printable characters
-      if (input && input.length === 1 && input.charCodeAt(0) >= 32) {
-        onChange(value + input);
+      // Accept printable characters (single keypress or pasted text)
+      if (input && input.length > 0) {
+        const printable = input.replace(/[^\x20-\x7E\u00A0-\uFFFF]/g, '');
+        if (printable.length > 0) {
+          onChange(value + printable);
+        }
       }
     },
     { isActive }

@@ -1,11 +1,12 @@
 import { useCallback, useMemo, useState } from 'react';
-import { TitledBox } from '@mishieck/ink-titled-box';
 import { Box, Text, useApp, useInput } from 'ink';
 import GitHubView from './components/github/GitHubView.js';
+import { JiraBrowserView } from './components/jira-browser/index.js';
 import { JiraView } from './components/jira/index.js';
 import { LogsView } from './components/logs/index.js';
 import KeybindingsBar from './components/ui/KeybindingsBar.js';
 import { GitHubFocusedBox } from './constants/github.js';
+import { JiraBrowserFocusedBox } from './constants/jira-browser.js';
 import { LogsFocusedBox } from './constants/logs.js';
 import { COLUMN2_TABS, TabId } from './constants/tabs.js';
 import { useRubberDuck } from './hooks/index.js';
@@ -23,6 +24,8 @@ export default function App() {
   const [githubFocusedBox, setGithubFocusedBox] = useState<GitHubFocusedBox>('remotes');
   const [jiraState, setJiraState] = useState<JiraState>('not_configured');
   const [logsFocusedBox, setLogsFocusedBox] = useState<LogsFocusedBox>('history');
+  const [jiraBrowserFocusedBox, setJiraBrowserFocusedBox] = useState<JiraBrowserFocusedBox>('saved-views');
+  const [jiraBrowserModalOpen, setJiraBrowserModalOpen] = useState(false);
 
   // Compute keybindings from view state
   const keybindings = useMemo(
@@ -31,14 +34,16 @@ export default function App() {
         github: { focusedBox: githubFocusedBox },
         jira: { jiraState, modalOpen },
         logs: { focusedBox: logsFocusedBox },
-        tbd: {}
+        'jira-browser': { focusedBox: jiraBrowserFocusedBox, modalOpen: jiraBrowserModalOpen }
       }),
-    [focusedView, githubFocusedBox, jiraState, modalOpen, logsFocusedBox]
+    [focusedView, githubFocusedBox, jiraState, modalOpen, logsFocusedBox, jiraBrowserFocusedBox, jiraBrowserModalOpen]
   );
 
   const handleLogUpdated = useCallback(() => {
     setLogRefreshKey((prev) => prev + 1);
   }, []);
+
+  const anyModalOpen = modalOpen || jiraBrowserModalOpen;
 
   useInput(
     (input, key) => {
@@ -52,14 +57,14 @@ export default function App() {
         setFocusedView('jira');
       }
       if (input === '5') {
-        setFocusedView('logs');
-        setActiveTab('logs');
-        setLogsFocusedBox('history');
+        setFocusedView(activeTab);
+        if (activeTab === 'logs') setLogsFocusedBox('history');
+        if (activeTab === 'jira-browser') setJiraBrowserFocusedBox('saved-views');
       }
       if (input === '6') {
-        setFocusedView('logs');
-        setActiveTab('logs');
-        setLogsFocusedBox('viewer');
+        setFocusedView(activeTab);
+        if (activeTab === 'logs') setLogsFocusedBox('viewer');
+        if (activeTab === 'jira-browser') setJiraBrowserFocusedBox('browser');
       }
       if (key.tab) {
         setActiveTab((current) => {
@@ -77,7 +82,7 @@ export default function App() {
         duck.quack();
       }
     },
-    { isActive: !modalOpen }
+    { isActive: !anyModalOpen }
   );
 
   return (
@@ -118,18 +123,20 @@ export default function App() {
               onFocusedBoxChange={setLogsFocusedBox}
             />
           )}
-          {activeTab === 'tbd' && (
-            <TitledBox borderStyle="round" titles={['TBD']} flexGrow={1}>
-              <Box flexGrow={1} justifyContent="center" alignItems="center" paddingX={1}>
-                <Text dimColor>Coming soon</Text>
-              </Box>
-            </TitledBox>
+          {activeTab === 'jira-browser' && (
+            <JiraBrowserView
+              isActive={focusedView === 'jira-browser'}
+              focusedBox={jiraBrowserFocusedBox}
+              onFocusedBoxChange={setJiraBrowserFocusedBox}
+              onModalChange={setJiraBrowserModalOpen}
+              onLogUpdated={handleLogUpdated}
+            />
           )}
         </Box>
       </Box>
       <KeybindingsBar
         contextBindings={keybindings}
-        modalOpen={modalOpen}
+        modalOpen={anyModalOpen}
         duck={{ visible: duck.visible, message: duck.message }}
       />
     </Box>
