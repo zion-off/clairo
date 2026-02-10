@@ -234,6 +234,8 @@ export default function JiraIssueDetailView({
                 <Text color={statusColor}>{detail.fields.status.name}</Text>
                 <Text dimColor>Assignee:</Text>
                 <Text>{detail.fields.assignee?.displayName ?? 'Unassigned'}</Text>
+                <Text dimColor>Reporter:</Text>
+                <Text>{detail.fields.reporter?.displayName ?? 'Unknown'}</Text>
               </Box>
 
               <Box marginTop={1}>

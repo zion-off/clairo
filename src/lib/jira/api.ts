@@ -228,6 +228,7 @@ export type JiraIssueDetail = {
     summary: string;
     status: { name: string };
     assignee: { accountId: string; displayName: string } | null;
+    reporter: { accountId: string; displayName: string } | null;
     description: unknown; // ADF document
     comment: {
       comments: JiraComment[];
@@ -240,7 +241,10 @@ export type JiraIssueDetail = {
  * Get a Jira issue with full detail fields (description, comments, assignee)
  */
 export async function getIssueDetail(auth: JiraAuth, issueKey: string): Promise<JiraResult<JiraIssueDetail>> {
-  const result = await jiraFetch(auth, `/issue/${issueKey}?fields=summary,status,description,assignee,comment`);
+  const result = await jiraFetch(
+    auth,
+    `/issue/${issueKey}?fields=summary,status,description,assignee,reporter,comment`
+  );
 
   if (!result.ok) {
     if (result.status === 401 || result.status === 403) {
