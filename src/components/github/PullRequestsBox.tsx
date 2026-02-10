@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { TitledBox } from '@mishieck/ink-titled-box';
 import { Box, Text, useInput } from 'ink';
 import { ScrollView } from 'ink-scroll-view';
+import Spinner from 'ink-spinner';
 import { useListNavigation } from '../../hooks/index.js';
 import { copyToClipboard } from '../../lib/clipboard.js';
 import { PRListItem } from '../../lib/github/index.js';
@@ -82,7 +83,11 @@ export default function PullRequestsBox({
       <Box flexDirection="column" paddingX={1} flexGrow={1} overflow="hidden">
         {loading && <Text dimColor>Loading PRs...</Text>}
         {error && <Text color="red">{error}</Text>}
-        {isGeneratingPR && <Text color="yellow">Generating PR with Claude... (Esc to cancel)</Text>}
+        {isGeneratingPR && (
+          <Text color="yellow">
+            <Spinner type="dots" /> Generating PR with Claude... (Esc to cancel)
+          </Text>
+        )}
         {!loading && !error && (
           <ScrollView ref={scrollRef}>
             {prs.length === 0 && (
