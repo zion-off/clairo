@@ -103,7 +103,7 @@ export function generatePRContent(): ClaudeProcess {
 
 Rules:
 - "title": a concise PR title in imperative mood, under 72 characters
-- "body": a markdown PR description summarizing what changed and why. Use bullet points for multiple changes.
+- "body": a markdown PR description focusing on the motivation and what the PR achieves at a high level. Keep it concise — a short paragraph or two is ideal. Use bullet points only when there are genuinely distinct changes worth calling out separately. For larger PRs, organize with markdown sections (## headings) to break up the description.
 - Do not include any text outside the JSON object
 - Do not add any "Co-Authored-By" or attribution lines`;
   return runClaudePrompt(prompt);
