@@ -68,6 +68,7 @@ export function resolveMergeDisplay(pr: PRDetails | null): { text: string; color
   if (!pr) return { text: 'UNKNOWN', color: 'yellow' };
   if (pr.state === 'MERGED') return { text: 'MERGED', color: 'magenta' };
   if (pr.state === 'CLOSED') return { text: 'CLOSED', color: 'red' };
+  if (pr.isDraft) return { text: 'DRAFT', color: 'yellow' };
   if (pr.mergeable === 'MERGEABLE') return { text: 'MERGEABLE', color: 'green' };
   if (pr.mergeable === 'CONFLICTING') return { text: 'CONFLICTING', color: 'red' };
   return { text: pr.mergeable ?? 'UNKNOWN', color: 'yellow' };
