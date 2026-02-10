@@ -10,8 +10,10 @@ import {
   StatusCheck,
   resolveCheckStatus,
   resolveMergeDisplay,
-  resolveReviewDisplay
+  resolveReviewDisplay,
+  timeAgo
 } from '../../lib/github/index.js';
+import Divider from '../ui/Divider.js';
 import Markdown from '../ui/Markdown.js';
 
 type Props = {
@@ -52,7 +54,7 @@ export default function PRDetailsBox({ pr, loading, error, isActive }: Props) {
   const terminalWidth = stdout?.columns ?? 80;
   // Calculate width: this component takes ~half the terminal (left column)
   const columnWidth = Math.floor(terminalWidth / 2);
-  const titlePart = `╭─ ${displayTitle} `;
+  const titlePart = `╭ ${displayTitle} `;
   const dashCount = Math.max(0, columnWidth - titlePart.length - 1);
   const topBorder = `${titlePart}${'─'.repeat(dashCount)}╮`;
 
@@ -75,17 +77,25 @@ export default function PRDetailsBox({ pr, loading, error, isActive }: Props) {
             {!loading && !error && !pr && <Text dimColor>Select a PR to view details</Text>}
             {!loading && !error && pr && (
               <>
-                <Text bold>{pr.title}</Text>
-                <Text dimColor>
-                  by {pr.author?.login ?? 'unknown'} | {pr.commits?.length ?? 0} commits
-                </Text>
+                <Box>
+                  <Text bold>{pr.title} </Text>
+                  <Text color={mergeDisplay.color}>{'\uE0B6'}</Text>
+                  <Text color="black" backgroundColor={mergeDisplay.color} bold>{`${mergeDisplay.text}`}</Text>
+                  <Text color={mergeDisplay.color}>{'\uE0B4'}</Text>
+                </Box>
+                <Box>
+                  <Text dimColor>
+                    {pr.baseRefName} ← {pr.headRefName} | by {pr.author?.login ?? 'unknown'} | {pr.commits?.length ?? 0}{' '}
+                    commits{pr.createdAt && ` | opened ${timeAgo(pr.createdAt)}`} |{' '}
+                  </Text>
+                  <Text color="green">+{pr.additions}</Text>
+                  <Text dimColor> </Text>
+                  <Text color="red">-{pr.deletions}</Text>
+                </Box>
+                {(pr.labels?.length ?? 0) > 0 && <Text dimColor>{pr.labels.map((l) => l.name).join(', ')}</Text>}
 
                 <Box marginTop={1}>
-                  <Text dimColor>Review: </Text>
-                  <Text color={reviewDisplay.color}>{reviewDisplay.text}</Text>
-                  <Text> | </Text>
-                  <Text dimColor>Status: </Text>
-                  <Text color={mergeDisplay.color}>{mergeDisplay.text}</Text>
+                  <Divider />
                 </Box>
 
                 {(pr.assignees?.length ?? 0) > 0 && (
@@ -95,10 +105,13 @@ export default function PRDetailsBox({ pr, loading, error, isActive }: Props) {
                   </Box>
                 )}
 
-                {(pr.reviews?.length ?? 0) > 0 && (
-                  <Box flexDirection="column">
-                    <Text dimColor>Reviews:</Text>
-                    {pr.reviews.map((review, idx) => {
+                {((pr.reviews?.length ?? 0) > 0 || (pr.reviewRequests?.length ?? 0) > 0) && (
+                  <Box marginTop={1} flexDirection="column">
+                    <Box>
+                      <Text dimColor>Reviews: </Text>
+                      <Text color={reviewDisplay.color}>{reviewDisplay.text}</Text>
+                    </Box>
+                    {pr.reviews?.map((review, idx) => {
                       const color =
                         review.state === 'APPROVED'
                           ? 'green'
@@ -122,20 +135,17 @@ export default function PRDetailsBox({ pr, loading, error, isActive }: Props) {
                         </Text>
                       );
                     })}
-                  </Box>
-                )}
-
-                {(pr.reviewRequests?.length ?? 0) > 0 && (
-                  <Box>
-                    <Text dimColor>Pending: </Text>
-                    <Text color="yellow">
-                      {pr.reviewRequests.map((r) => r.login ?? r.name ?? r.slug ?? 'Team').join(', ')}
-                    </Text>
+                    {pr.reviewRequests?.map((r, idx) => (
+                      <Text key={`pending-${idx}`} color="yellow">
+                        {'  '}○ {r.login ?? r.name ?? r.slug ?? 'Team'} <Text dimColor>(pending)</Text>
+                      </Text>
+                    ))}
                   </Box>
                 )}
 
                 {(pr.statusCheckRollup?.length ?? 0) > 0 && (
                   <Box marginTop={1} flexDirection="column">
+                    <Divider />
                     <Text dimColor>Checks:</Text>
                     {Array.from(
                       pr.statusCheckRollup
@@ -167,6 +177,7 @@ export default function PRDetailsBox({ pr, loading, error, isActive }: Props) {
 
                 {pr.body && (
                   <Box marginTop={1} flexDirection="column">
+                    <Divider />
                     <Text dimColor>Description:</Text>
                     <Markdown>{pr.body}</Markdown>
                   </Box>
