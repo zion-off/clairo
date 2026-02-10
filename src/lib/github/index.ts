@@ -52,7 +52,7 @@ export type CheckStatus = 'success' | 'failure' | 'pending' | 'skipped';
 
 export function resolveCheckStatus(check: StatusCheck): CheckStatus {
   const conclusion = check.conclusion ?? check.state;
-  if (conclusion === 'SUCCESS' || check.status === 'COMPLETED') return 'success';
+  if (conclusion === 'SUCCESS') return 'success';
   if (conclusion === 'FAILURE' || conclusion === 'ERROR') return 'failure';
   if (conclusion === 'SKIPPED' || conclusion === 'NEUTRAL') return 'skipped';
   if (
