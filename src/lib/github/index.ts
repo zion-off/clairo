@@ -76,19 +76,20 @@ export const CHECK_SORT_ORDER: Record<CheckStatus, number> = { failure: 0, pendi
 
 export function resolveReviewDisplay(reviewDecision: string | null): { text: string; color: string } {
   const status = reviewDecision ?? 'PENDING';
-  if (status === 'APPROVED') return { text: status, color: 'green' };
-  if (status === 'CHANGES_REQUESTED') return { text: status, color: 'red' };
-  return { text: status, color: 'yellow' };
+  if (status === 'APPROVED') return { text: 'Approved', color: 'green' };
+  if (status === 'CHANGES_REQUESTED') return { text: 'Changes Requested', color: 'red' };
+  if (status === 'REVIEW_REQUIRED') return { text: 'Review Required', color: 'yellow' };
+  return { text: 'Pending', color: 'yellow' };
 }
 
 export function resolveMergeDisplay(pr: PRDetails | null): { text: string; color: string } {
-  if (!pr) return { text: 'UNKNOWN', color: 'yellow' };
-  if (pr.state === 'MERGED') return { text: 'MERGED', color: 'magenta' };
-  if (pr.state === 'CLOSED') return { text: 'CLOSED', color: 'red' };
-  if (pr.isDraft) return { text: 'DRAFT', color: 'yellow' };
-  if (pr.mergeable === 'MERGEABLE') return { text: 'MERGEABLE', color: 'green' };
-  if (pr.mergeable === 'CONFLICTING') return { text: 'CONFLICTING', color: 'red' };
-  return { text: pr.mergeable ?? 'UNKNOWN', color: 'yellow' };
+  if (!pr) return { text: 'Unknown', color: 'yellow' };
+  if (pr.state === 'MERGED') return { text: 'Merged', color: 'magenta' };
+  if (pr.state === 'CLOSED') return { text: 'Closed', color: 'red' };
+  if (pr.isDraft) return { text: 'Draft', color: 'yellow' };
+  if (pr.mergeable === 'MERGEABLE') return { text: 'Open', color: 'green' };
+  if (pr.mergeable === 'CONFLICTING') return { text: 'Conflicts', color: 'red' };
+  return { text: 'Unknown', color: 'yellow' };
 }
 
 export type PRDetails = {
