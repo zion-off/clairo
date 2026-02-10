@@ -73,7 +73,7 @@ export default function ChangeStatusModal({ repoPath, ticketKey, currentStatus, 
       // Find the transition to get the target status name
       const transition = transitions.find((t) => t.id === item.value);
       const newStatus = transition?.to.name ?? item.label;
-      duckEvents.emit('jira:transition');
+      duckEvents.emit('jira:transition', { ticketKey, status: newStatus });
       onComplete(newStatus);
     } else {
       setError(result.error);

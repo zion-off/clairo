@@ -11,13 +11,21 @@ export type DuckEvent =
   | 'jira:assigned'
   | 'jira:unassigned';
 
-type DuckEventListener = (event: DuckEvent) => void;
+export type DuckEventPayload = {
+  prNumber?: number;
+  prTitle?: string;
+  ticketKey?: string;
+  status?: string;
+  assignee?: string;
+};
+
+type DuckEventListener = (event: DuckEvent, payload?: DuckEventPayload) => void;
 
 const listeners = new Set<DuckEventListener>();
 
 export const duckEvents = {
-  emit: (event: DuckEvent) => {
-    listeners.forEach((fn) => fn(event));
+  emit: (event: DuckEvent, payload?: DuckEventPayload) => {
+    listeners.forEach((fn) => fn(event, payload));
   },
   subscribe: (fn: DuckEventListener) => {
     listeners.add(fn);

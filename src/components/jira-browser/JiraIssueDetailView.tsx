@@ -106,7 +106,7 @@ export default function JiraIssueDetailView({
       onIssueUpdated(issueKey, { status: newStatus });
 
       // Duck event + log
-      duckEvents.emit('jira:transition');
+      duckEvents.emit('jira:transition', { ticketKey: issueKey, status: newStatus });
       logJiraStatusChanged(issueKey, issueSummary, oldStatus, newStatus);
       onLogUpdated?.();
     } else {
@@ -127,7 +127,7 @@ export default function JiraIssueDetailView({
       setDetail((prev) => (prev ? { ...prev, fields: { ...prev.fields, assignee } } : prev));
       onIssueUpdated(issueKey, { assignee });
 
-      duckEvents.emit('jira:assigned');
+      duckEvents.emit('jira:assigned', { ticketKey: issueKey, assignee: myDisplayName });
       logJiraAssigneeChanged(issueKey, issueSummary, 'assigned', myDisplayName);
       onLogUpdated?.();
     } else {
@@ -146,7 +146,7 @@ export default function JiraIssueDetailView({
       setDetail((prev) => (prev ? { ...prev, fields: { ...prev.fields, assignee: null } } : prev));
       onIssueUpdated(issueKey, { assignee: null });
 
-      duckEvents.emit('jira:unassigned');
+      duckEvents.emit('jira:unassigned', { ticketKey: issueKey });
       logJiraAssigneeChanged(issueKey, issueSummary, 'unassigned');
       onLogUpdated?.();
     } else {

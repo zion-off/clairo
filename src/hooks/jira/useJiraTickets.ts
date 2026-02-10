@@ -163,7 +163,7 @@ export function useJiraTickets() {
       const newTickets = getLinkedTickets(repoPath, currentBranch);
       setTickets(newTickets);
       setJiraState('has_tickets');
-      duckEvents.emit('jira:linked');
+      duckEvents.emit('jira:linked', { ticketKey: result.data.key });
       setLoading((prev) => ({ ...prev, link: false }));
       return true;
     },

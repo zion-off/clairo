@@ -52,6 +52,17 @@ export function usePullRequests() {
       if (result.success) {
         setPrDetails(result.data);
         setErrors((prev) => ({ ...prev, details: undefined }));
+
+        const payload = { prNumber: result.data.number, prTitle: result.data.title };
+        if (result.data.state === 'MERGED') {
+          duckEvents.emit('pr:merged', payload);
+        } else if (result.data.reviewDecision === 'APPROVED') {
+          duckEvents.emit('pr:approved', payload);
+        } else if (result.data.reviewDecision === 'CHANGES_REQUESTED') {
+          duckEvents.emit('pr:changes-requested', payload);
+        } else if (result.data.reviews.length > 0) {
+          duckEvents.emit('pr:reviewed', payload);
+        }
       } else {
         setErrors((prev) => ({ ...prev, details: result.error }));
       }

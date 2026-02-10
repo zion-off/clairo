@@ -171,7 +171,7 @@ export default function GitHubView({ isActive, onFocusedBoxChange, onLogUpdated 
           onNewPR: (newPR) => {
             const ticketKeys = repoPath && branch ? getLinkedTickets(repoPath, branch).map((t) => t.key) : [];
             logPRCreated(newPR.number, newPR.title, ticketKeys);
-            duckEvents.emit('pr:opened');
+            duckEvents.emit('pr:opened', { prNumber: newPR.number, prTitle: newPR.title });
             onLogUpdatedRef.current?.();
           }
         });
@@ -212,7 +212,7 @@ export default function GitHubView({ isActive, onFocusedBoxChange, onLogUpdated 
       onNewPR: (newPR) => {
         const tickets = repoPath && branch ? getLinkedTickets(repoPath, branch).map((t) => t.key) : [];
         logPRCreated(newPR.number, newPR.title, tickets);
-        duckEvents.emit('pr:opened');
+        duckEvents.emit('pr:opened', { prNumber: newPR.number, prTitle: newPR.title });
         onLogUpdatedRef.current?.();
       }
     });
