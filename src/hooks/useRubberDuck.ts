@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { loadConfig, saveConfig } from '../lib/config/index.js';
 import { DuckEvent, duckEvents } from '../lib/duckEvents.js';
 
 const DUCK_MESSAGES = [
@@ -43,9 +44,12 @@ type DuckState = {
 };
 
 export function useRubberDuck() {
-  const [state, setState] = useState<DuckState>({
-    visible: false,
-    message: DUCK_MESSAGES[0]!
+  const [state, setState] = useState<DuckState>(() => {
+    const config = loadConfig();
+    return {
+      visible: config.duckVisible ?? false,
+      message: DUCK_MESSAGES[0]!
+    };
   });
 
   const getRandomMessage = useCallback(() => {
@@ -54,11 +58,16 @@ export function useRubberDuck() {
   }, []);
 
   const toggleDuck = useCallback(() => {
-    setState((prev) => ({
-      ...prev,
-      visible: !prev.visible,
-      message: !prev.visible ? getRandomMessage() : prev.message
-    }));
+    setState((prev) => {
+      const newVisible = !prev.visible;
+      const config = loadConfig();
+      saveConfig({ ...config, duckVisible: newVisible });
+      return {
+        ...prev,
+        visible: newVisible,
+        message: newVisible ? getRandomMessage() : prev.message
+      };
+    });
   }, [getRandomMessage]);
 
   const quack = useCallback(() => {

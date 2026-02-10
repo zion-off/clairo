@@ -34,6 +34,7 @@ export type RepositoryConfig = {
 };
 
 export type Config = {
+  duckVisible?: boolean;
   repositories?: Record<string, RepositoryConfig>;
   [key: string]: unknown;
 };
