@@ -13,6 +13,7 @@
   },
   "scripts": {
     "build": "tsup",
+    "build:watch": "nodemon --watch src --ext ts,tsx --exec tsup",
     "dev": "tsx --watch src/cli.tsx",
     "start": "node dist/cli.js",
     "lint": "prettier --write . && eslint . --fix"
@@ -41,6 +42,7 @@
     "chalk": "^5.2.0",
     "eslint": "^9.0.0",
     "eslint-plugin-react": "^7.32.2",
+    "nodemon": "^3.1.11",
     "prettier": "^2.8.7",
     "tsup": "^8.5.1",
     "tsx": "^4.21.0",

@@ -38,3 +38,21 @@ npx clairo
 # Run in a different repo
 npx clairo --cwd ~/projects/other-repo
 ```
+
+## development
+
+### watch mode
+
+since clairo operates on the git repo in the current directory, you need two terminals:
+
+terminal 1 (in the clairo project) — rebuild on source changes:
+```bash
+pnpm build:watch
+```
+
+terminal 2 (in any project directory) — auto-restart the TUI on rebuild:
+```bash
+clairo:dev
+```
+
+`clairo:dev` is a shell alias (in `~/.zshrc`) that uses [watchexec](https://github.com/watchexec/watchexec) to watch clairo's `dist/` and restart the TUI when it changes. install with `brew install watchexec`.
