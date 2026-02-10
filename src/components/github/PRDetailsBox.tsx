@@ -97,7 +97,9 @@ export default function PRDetailsBox({ pr, loading, error, isActive }: Props) {
                     {pr.labels.map((l) => (
                       <Box key={l.name}>
                         <Text color="gray">{'\uE0B6'}</Text>
-                        <Text color="black" backgroundColor="gray">{l.name}</Text>
+                        <Text color="black" backgroundColor="gray">
+                          {l.name}
+                        </Text>
                         <Text color="gray">{'\uE0B4'}</Text>
                       </Box>
                     ))}

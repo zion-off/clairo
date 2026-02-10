@@ -19,6 +19,7 @@ type Props = {
 
 const globalBindings: Keybinding[] = [
   { key: '1-4', label: 'Focus' },
+  { key: 'Tab', label: 'Switch Tab' },
   { key: 'j/k', label: 'Navigate' },
   { key: 'Ctrl+C', label: 'Quit' }
 ];

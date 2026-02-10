@@ -46,11 +46,13 @@ npx clairo --cwd ~/projects/other-repo
 since clairo operates on the git repo in the current directory, you need two terminals:
 
 terminal 1 (in the clairo project) — rebuild on source changes:
+
 ```bash
 pnpm build:watch
 ```
 
 terminal 2 (in any project directory) — auto-restart the TUI on rebuild:
+
 ```bash
 clairo:dev
 ```

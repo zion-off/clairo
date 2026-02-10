@@ -13,6 +13,8 @@ Terminal dashboard for GitHub and Jira integration, built with Ink (React for CL
 - `app.tsx` manages view focus (`github` | `jira`) and modal state
 - Views manage box focus within them (e.g., `remotes` | `prs` | `details`)
 - Number keys 1-4 switch focus, shown in TitledBox titles as `[1]`, `[2]`, etc.
+- Column 2 uses a tab system (`constants/tabs.ts`): Tab key cycles tabs, active tab is bold, inactive tabs get `dimColor`
+- Tab registry `COLUMN2_TABS` is the source of truth; `activeTab` state in `app.tsx` controls which tab is rendered
 
 ## Key Conventions
 
@@ -62,6 +64,12 @@ useInput((input, key) => { ... }, { isActive: isFocused && !showModal });
 4. Include in `onKeybindingsChange` effect (clear bindings when open)
 5. Check for modal in `useInput` active condition
 6. Render modal conditionally, return early
+
+### New tab in column 2
+
+1. Add id to `TabId` and entry to `COLUMN2_TABS` in `constants/tabs.ts`
+2. Add to `FocusedView`, `ViewKeyState`, and `computeKeybindings` in `lib/keybindings.ts`
+3. Add conditional render block in `app.tsx`
 
 ### New API integration
 
