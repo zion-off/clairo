@@ -92,7 +92,17 @@ export default function PRDetailsBox({ pr, loading, error, isActive }: Props) {
                   <Text dimColor> </Text>
                   <Text color="red">-{pr.deletions}</Text>
                 </Box>
-                {(pr.labels?.length ?? 0) > 0 && <Text dimColor>{pr.labels.map((l) => l.name).join(', ')}</Text>}
+                {(pr.labels?.length ?? 0) > 0 && (
+                  <Box gap={1}>
+                    {pr.labels.map((l) => (
+                      <Box key={l.name}>
+                        <Text color="gray">{'\uE0B6'}</Text>
+                        <Text color="black" backgroundColor="gray">{l.name}</Text>
+                        <Text color="gray">{'\uE0B4'}</Text>
+                      </Box>
+                    ))}
+                  </Box>
+                )}
 
                 <Box marginTop={1}>
                   <Divider />
