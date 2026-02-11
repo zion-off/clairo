@@ -4,6 +4,7 @@ import GitHubView from './components/github/GitHubView';
 import { JiraBrowserView } from './components/jira-browser/index';
 import { JiraView } from './components/jira/index';
 import { LogsView } from './components/logs/index';
+import { AllPullRequestsView } from './components/pull-requests/index';
 import KeybindingsBar from './components/ui/KeybindingsBar';
 import { GitHubFocusedBox } from './constants/github';
 import { JiraBrowserFocusedBox } from './constants/jira-browser';
@@ -26,6 +27,7 @@ export default function App() {
   const [logsFocusedBox, setLogsFocusedBox] = useState<LogsFocusedBox>('history');
   const [jiraBrowserFocusedBox, setJiraBrowserFocusedBox] = useState<JiraBrowserFocusedBox>('saved-views');
   const [jiraBrowserModalOpen, setJiraBrowserModalOpen] = useState(false);
+  const [pullRequestsModalOpen, setPullRequestsModalOpen] = useState(false);
 
   // Compute keybindings from view state
   const keybindings = useMemo(
@@ -34,16 +36,26 @@ export default function App() {
         github: { focusedBox: githubFocusedBox },
         jira: { jiraState, modalOpen },
         logs: { focusedBox: logsFocusedBox },
-        'jira-browser': { focusedBox: jiraBrowserFocusedBox, modalOpen: jiraBrowserModalOpen }
+        'jira-browser': { focusedBox: jiraBrowserFocusedBox, modalOpen: jiraBrowserModalOpen },
+        'pull-requests': { modalOpen: pullRequestsModalOpen }
       }),
-    [focusedView, githubFocusedBox, jiraState, modalOpen, logsFocusedBox, jiraBrowserFocusedBox, jiraBrowserModalOpen]
+    [
+      focusedView,
+      githubFocusedBox,
+      jiraState,
+      modalOpen,
+      logsFocusedBox,
+      jiraBrowserFocusedBox,
+      jiraBrowserModalOpen,
+      pullRequestsModalOpen
+    ]
   );
 
   const handleLogUpdated = useCallback(() => {
     setLogRefreshKey((prev) => prev + 1);
   }, []);
 
-  const anyModalOpen = modalOpen || jiraBrowserModalOpen;
+  const anyModalOpen = modalOpen || jiraBrowserModalOpen || pullRequestsModalOpen;
 
   useInput(
     (input, key) => {
@@ -131,6 +143,9 @@ export default function App() {
               onModalChange={setJiraBrowserModalOpen}
               onLogUpdated={handleLogUpdated}
             />
+          )}
+          {activeTab === 'pull-requests' && (
+            <AllPullRequestsView isActive={focusedView === 'pull-requests'} onModalChange={setPullRequestsModalOpen} />
           )}
         </Box>
       </Box>

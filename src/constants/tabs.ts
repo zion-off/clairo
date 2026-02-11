@@ -1,4 +1,4 @@
-export type TabId = 'logs' | 'jira-browser';
+export type TabId = 'logs' | 'jira-browser' | 'pull-requests';
 
 export type TabConfig = {
   id: TabId;
@@ -7,5 +7,6 @@ export type TabConfig = {
 
 export const COLUMN2_TABS: TabConfig[] = [
   { id: 'logs', label: 'Logs' },
-  { id: 'jira-browser', label: 'Jira' }
+  { id: 'jira-browser', label: 'Jira' },
+  { id: 'pull-requests', label: 'PRs' }
 ];

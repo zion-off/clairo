@@ -3,8 +3,9 @@ import { GITHUB_KEYBINDINGS, GitHubFocusedBox } from '../constants/github';
 import { JIRA_KEYBINDINGS } from '../constants/jira';
 import { JIRA_BROWSER_KEYBINDINGS, JiraBrowserFocusedBox } from '../constants/jira-browser';
 import { LOGS_KEYBINDINGS, LogsFocusedBox } from '../constants/logs';
+import { PULL_REQUESTS_KEYBINDINGS } from '../constants/pull-requests';
 
-export type FocusedView = 'github' | 'jira' | 'logs' | 'jira-browser';
+export type FocusedView = 'github' | 'jira' | 'logs' | 'jira-browser' | 'pull-requests';
 
 export type JiraState = 'not_configured' | 'no_tickets' | 'has_tickets';
 
@@ -13,6 +14,7 @@ export type ViewKeyState = {
   jira: { jiraState: JiraState; modalOpen: boolean };
   logs: { focusedBox: LogsFocusedBox };
   'jira-browser': { focusedBox: JiraBrowserFocusedBox; modalOpen: boolean };
+  'pull-requests': { modalOpen: boolean };
 };
 
 /**
@@ -34,6 +36,10 @@ export function computeKeybindings(focusedView: FocusedView, state: ViewKeyState
     case 'jira-browser':
       if (state['jira-browser'].modalOpen) return [];
       return JIRA_BROWSER_KEYBINDINGS[state['jira-browser'].focusedBox];
+
+    case 'pull-requests':
+      if (state['pull-requests'].modalOpen) return [];
+      return PULL_REQUESTS_KEYBINDINGS;
 
     default:
       return [];

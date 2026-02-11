@@ -11,6 +11,8 @@ dashboard tui for github PRs, jira tickets, and daily logs.
   - view open PRs with status, reviews, and checks
   - see full PR details with description, labels, and assignees
   - create new PRs from the terminal
+  - browse all PRs across the repo with state, search, and status filters
+  - checkout PRs directly from the detail view
 - jira integration
   - auto ticket detection based on branch name
   - link tickets and change status from the terminal

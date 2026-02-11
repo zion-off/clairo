@@ -2,6 +2,7 @@ import open from 'open';
 import { useRef } from 'react';
 import { Box, Text, useInput, useStdout } from 'ink';
 import { ScrollView, ScrollViewRef } from 'ink-scroll-view';
+import Spinner from 'ink-spinner';
 import {
   CHECK_COLORS,
   CHECK_ICONS,
@@ -22,12 +23,11 @@ type Props = {
   loading: boolean;
   error?: string;
   isActive: boolean;
+  title?: string;
 };
 
-export default function PRDetailsBox({ pr, loading, error, isActive }: Props) {
+export default function PRDetailsBox({ pr, loading, error, isActive, title = '[3] PR Details' }: Props) {
   const scrollRef = useRef<ScrollViewRef>(null);
-
-  const title = '[3] PR Details';
   const borderColor = isActive ? 'yellow' : undefined;
 
   const displayTitle = pr ? `${title} - #${pr.number}` : title;
@@ -73,7 +73,11 @@ export default function PRDetailsBox({ pr, loading, error, isActive }: Props) {
       >
         <ScrollView ref={scrollRef}>
           <Box flexDirection="column" paddingX={1}>
-            {loading && <Text dimColor>Loading details...</Text>}
+            {loading && (
+              <Text color="yellow">
+                <Spinner type="dots" /> Loading details...
+              </Text>
+            )}
             {error && <Text color="red">{error}</Text>}
             {!loading && !error && !pr && <Text dimColor>Select a PR to view details</Text>}
             {!loading && !error && pr && (

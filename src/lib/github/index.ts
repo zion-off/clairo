@@ -35,6 +35,8 @@ export type PRListItem = {
   author: { login: string };
   createdAt: string;
   isDraft: boolean;
+  reviewDecision: 'APPROVED' | 'CHANGES_REQUESTED' | 'REVIEW_REQUIRED' | null;
+  statusCheckRollup: StatusCheck[] | null;
 };
 
 export type StatusCheck = {
@@ -54,7 +56,7 @@ export function resolveCheckStatus(check: StatusCheck): CheckStatus {
   const conclusion = check.conclusion ?? check.state;
   if (conclusion === 'SUCCESS') return 'success';
   if (conclusion === 'FAILURE' || conclusion === 'ERROR') return 'failure';
-  if (conclusion === 'SKIPPED' || conclusion === 'NEUTRAL') return 'skipped';
+  if (conclusion === 'SKIPPED' || conclusion === 'NEUTRAL' || conclusion === 'CANCELLED') return 'skipped';
   if (
     conclusion === 'PENDING' ||
     check.status === 'IN_PROGRESS' ||
@@ -178,7 +180,7 @@ export async function listPRsForBranch(branch: string, repo: string): Promise<Gi
     };
   }
 
-  const fields = 'number,title,state,author,createdAt,isDraft';
+  const fields = 'number,title,state,author,createdAt,isDraft,reviewDecision,statusCheckRollup';
 
   // Option 2: Try gh pr view first (auto-detects PR for current branch, handles forks)
   // Note: Don't use --repo here - gh pr view auto-detects the correct upstream
