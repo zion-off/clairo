@@ -129,11 +129,26 @@ function escapeJql(text: string): string {
 }
 
 /**
- * Append a text search clause to a JQL query
+ * Create a JQL search clause that handles both text and ticket IDs
+ */
+function createSearchClause(searchText: string): string {
+  const escaped = escapeJql(searchText);
+  // Full ticket ID like PROJ-123 or proj-123
+  if (/^[A-Z]+-\d+$/i.test(searchText)) {
+    return `(key = "${escaped}" OR text ~ "${escaped}")`;
+  }
+  // Just a number like 123 - match any ticket ending in that number
+  if (/^\d+$/.test(searchText)) {
+    return `(key ~ "*-${escaped}" OR text ~ "${escaped}")`;
+  }
+  return `text ~ "${escaped}"`;
+}
+
+/**
+ * Append a search clause to a JQL query
  */
 function appendTextSearch(jql: string, searchText: string): string {
-  const escaped = escapeJql(searchText);
-  return `(${jql}) AND text ~ "${escaped}"`;
+  return `(${jql}) AND ${createSearchClause(searchText)}`;
 }
 
 /**
@@ -160,7 +175,7 @@ export async function fetchViewIssues(
     }
 
     case 'board': {
-      const jql = searchText ? `text ~ "${escapeJql(searchText)}"` : undefined;
+      const jql = searchText ? createSearchClause(searchText) : undefined;
       return getBoardIssues(auth, view.source.boardId, { ...pageOpts, jql });
     }
   }
