@@ -313,7 +313,7 @@ export default function AllPullRequestsView({ isActive, onModalChange }: Props) 
           {/* Content */}
           {loading && (
             <Text color="yellow">
-              <Spinner type="dots" /> Loading PRs...
+              <Spinner type="dots" /> Loading PRs 1-{limit}...
             </Text>
           )}
           {error && <Text color="red">{error}</Text>}
