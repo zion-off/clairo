@@ -13,6 +13,7 @@ import {
   resolveReviewDisplay,
   timeAgo
 } from '../../lib/github/index.js';
+import Badge from '../ui/Badge.js';
 import Divider from '../ui/Divider.js';
 import Markdown from '../ui/Markdown.js';
 
@@ -79,9 +80,9 @@ export default function PRDetailsBox({ pr, loading, error, isActive }: Props) {
               <>
                 <Box>
                   <Text bold>{pr.title} </Text>
-                  <Text color={mergeDisplay.color}>{'\uE0B6'}</Text>
-                  <Text color="black" backgroundColor={mergeDisplay.color} bold>{`${mergeDisplay.text}`}</Text>
-                  <Text color={mergeDisplay.color}>{'\uE0B4'}</Text>
+                  <Badge color="black" background={mergeDisplay.color}>
+                    {mergeDisplay.text}
+                  </Badge>
                 </Box>
                 <Box>
                   <Text dimColor>
@@ -96,11 +97,9 @@ export default function PRDetailsBox({ pr, loading, error, isActive }: Props) {
                   <Box gap={1}>
                     {pr.labels.map((l) => (
                       <Box key={l.name}>
-                        <Text color="gray">{'\uE0B6'}</Text>
-                        <Text color="black" backgroundColor="gray">
+                        <Badge color="black" background="gray">
                           {l.name}
-                        </Text>
-                        <Text color="gray">{'\uE0B4'}</Text>
+                        </Badge>
                       </Box>
                     ))}
                   </Box>
