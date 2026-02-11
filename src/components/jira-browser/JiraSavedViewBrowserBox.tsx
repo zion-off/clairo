@@ -104,22 +104,11 @@ export default function JiraSavedViewBrowserBox({
   const borderColor = isActive ? 'yellow' : undefined;
   const displayTitle = view ? `${title} - ${view.name}` : title;
 
-  // Apply client-side assignee filter only (text search is server-side)
-  const filteredIssues = useMemo(() => {
-    if (assigneeFilter === 'unassigned') {
-      return issues.filter((issue) => !issue.fields.assignee);
-    }
-    if (assigneeFilter === 'me' && myAccountId) {
-      return issues.filter((issue) => issue.fields.assignee?.accountId === myAccountId);
-    }
-    return issues;
-  }, [issues, assigneeFilter, myAccountId]);
-
   // Group and build rows
   const rows = useMemo(() => {
-    const groups = groupBySprint(filteredIssues);
+    const groups = groupBySprint(issues);
     return buildRows(groups);
-  }, [filteredIssues]);
+  }, [issues]);
 
   // Navigable indices are only issue rows
   const navigableIndices = useMemo(
@@ -140,15 +129,20 @@ export default function JiraSavedViewBrowserBox({
   const hasMore = issues.length < total;
 
   const doFetch = useCallback(
-    async (search: string, startAt = 0, append = false) => {
+    async (search: string, filter: AssigneeFilter, startAt = 0, append = false) => {
       if (!view || !auth) return;
       setLoading(true);
       setError(null);
+      if (!append) {
+        setIssues([]);
+        setTotal(0);
+      }
 
       const result = await fetchViewIssues(auth, view, {
         startAt,
         maxResults: 50,
-        searchText: search || undefined
+        searchText: search || undefined,
+        assigneeFilter: filter === 'all' ? undefined : filter
       });
       if (result.success) {
         setIssues((prev) => (append ? [...prev, ...result.data.issues] : result.data.issues));
@@ -171,7 +165,8 @@ export default function JiraSavedViewBrowserBox({
     if (view && auth) {
       setSearchText('');
       setInputText('');
-      doFetch('');
+      setAssigneeFilter('all');
+      doFetch('', 'all');
     } else {
       setIssues([]);
       setTotal(0);
@@ -222,7 +217,7 @@ export default function JiraSavedViewBrowserBox({
           const newSearch = inputText.trim();
           if (newSearch !== searchText) {
             setSearchText(newSearch);
-            doFetch(newSearch);
+            doFetch(newSearch, assigneeFilter);
           }
           return;
         }
@@ -267,35 +262,33 @@ export default function JiraSavedViewBrowserBox({
         return;
       }
       if (input === 'u') {
-        setAssigneeFilter((f) => (f === 'unassigned' ? 'all' : 'unassigned'));
+        const newFilter = assigneeFilter === 'unassigned' ? 'all' : 'unassigned';
+        setAssigneeFilter(newFilter);
+        doFetch(searchText, newFilter);
         setHighlightedIndex(0);
         return;
       }
       if (input === 'm') {
-        setAssigneeFilter((f) => {
-          if (f === 'me') return 'all';
-          if (!myAccountId) onFetchCurrentUser();
-          return 'me';
-        });
+        const newFilter = assigneeFilter === 'me' ? 'all' : 'me';
+        setAssigneeFilter(newFilter);
+        doFetch(searchText, newFilter);
         setHighlightedIndex(0);
         return;
       }
       if (input === 'x') {
         setAssigneeFilter('all');
-        if (searchText) {
-          setSearchText('');
-          setInputText('');
-          doFetch('');
-        }
+        setSearchText('');
+        setInputText('');
+        doFetch('', 'all');
         setHighlightedIndex(0);
         return;
       }
       if (input === 'l' && hasMore) {
-        doFetch(searchText, issues.length, true);
+        doFetch(searchText, assigneeFilter, issues.length, true);
         return;
       }
       if (input === 'r') {
-        doFetch(searchText);
+        doFetch(searchText, assigneeFilter);
       }
     },
     { isActive }
@@ -339,7 +332,7 @@ export default function JiraSavedViewBrowserBox({
                     <Text>{filterParts.join(' + ')}</Text>
                     <Text dimColor>
                       {' '}
-                      ({filteredIssues.length}/{total})
+                      ({issues.length}/{total})
                     </Text>
                   </>
                 )}
@@ -370,13 +363,7 @@ export default function JiraSavedViewBrowserBox({
 
               {view && !loading && !error && issues.length === 0 && (
                 <Box paddingX={1}>
-                  <Text dimColor>{searchText ? 'No issues match search' : 'No issues found'}</Text>
-                </Box>
-              )}
-
-              {view && !loading && !error && filteredIssues.length === 0 && issues.length > 0 && (
-                <Box paddingX={1}>
-                  <Text dimColor>No issues match filter</Text>
+                  <Text dimColor>{hasActiveFilters ? 'No issues match filter' : 'No issues found'}</Text>
                 </Box>
               )}
 

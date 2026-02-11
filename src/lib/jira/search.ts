@@ -152,30 +152,45 @@ function appendTextSearch(jql: string, searchText: string): string {
 }
 
 /**
+ * Create a JQL clause for assignee filtering
+ */
+function createAssigneeClause(filter: 'unassigned' | 'me'): string {
+  if (filter === 'unassigned') return 'assignee is EMPTY';
+  return 'assignee = currentUser()';
+}
+
+/**
  * Fetch a single page of issues for a saved view
  */
 export async function fetchViewIssues(
   auth: JiraAuth,
   view: SavedJiraView,
-  opts?: { startAt?: number; maxResults?: number; searchText?: string }
+  opts?: { startAt?: number; maxResults?: number; searchText?: string; assigneeFilter?: 'unassigned' | 'me' }
 ): Promise<JiraResult<JiraSearchResult>> {
-  const { searchText, ...pageOpts } = opts ?? {};
+  const { searchText, assigneeFilter, ...pageOpts } = opts ?? {};
 
   switch (view.source.type) {
     case 'jql': {
-      const jql = searchText ? appendTextSearch(view.source.jql, searchText) : view.source.jql;
+      let jql = view.source.jql;
+      if (searchText) jql = appendTextSearch(jql, searchText);
+      if (assigneeFilter) jql = `(${jql}) AND ${createAssigneeClause(assigneeFilter)}`;
       return searchIssues(auth, jql, pageOpts);
     }
 
     case 'filter': {
       const filterResult = await getFilterJql(auth, view.source.filterId);
       if (!filterResult.success) return filterResult as JiraResult<JiraSearchResult>;
-      const jql = searchText ? appendTextSearch(filterResult.data, searchText) : filterResult.data;
+      let jql = filterResult.data;
+      if (searchText) jql = appendTextSearch(jql, searchText);
+      if (assigneeFilter) jql = `(${jql}) AND ${createAssigneeClause(assigneeFilter)}`;
       return searchIssues(auth, jql, pageOpts);
     }
 
     case 'board': {
-      const jql = searchText ? createSearchClause(searchText) : undefined;
+      const clauses: string[] = [];
+      if (searchText) clauses.push(createSearchClause(searchText));
+      if (assigneeFilter) clauses.push(createAssigneeClause(assigneeFilter));
+      const jql = clauses.length > 0 ? clauses.join(' AND ') : undefined;
       return getBoardIssues(auth, view.source.boardId, { ...pageOpts, jql });
     }
   }
