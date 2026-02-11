@@ -3,10 +3,10 @@ import { useState } from 'react';
 import { TitledBox } from '@mishieck/ink-titled-box';
 import { Box, Text, useInput } from 'ink';
 import { ScrollView } from 'ink-scroll-view';
-import Spinner from 'ink-spinner';
 import { useListNavigation } from '../../hooks/index';
 import { copyToClipboard } from '../../lib/clipboard';
 import { PRListItem } from '../../lib/github/index';
+import AnimatedText from '../ui/AnimatedText';
 
 type Props = {
   prs: PRListItem[];
@@ -84,9 +84,9 @@ export default function PullRequestsBox({
         {loading && <Text dimColor>Loading PRs...</Text>}
         {error && <Text color="red">{error}</Text>}
         {isGeneratingPR && (
-          <Text color="yellow">
-            <Spinner type="dots" /> Generating PR with Claude... (Esc to cancel)
-          </Text>
+          <AnimatedText name="radar" config={{ baseColor: '#CC6600' }}>
+            Generating PR with Claude... (Esc to cancel)
+          </AnimatedText>
         )}
         {!loading && !error && (
           <ScrollView ref={scrollRef}>

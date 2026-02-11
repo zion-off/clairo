@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { TitledBox } from '@mishieck/ink-titled-box';
 import { Box, Text, useInput } from 'ink';
 import { ScrollView, ScrollViewRef } from 'ink-scroll-view';
-import Spinner from 'ink-spinner';
 import TextInput from 'ink-text-input';
 import { ClaudeProcess, generateStandupNotes } from '../../lib/claude/index';
 import {
@@ -13,6 +12,7 @@ import {
   logExists,
   openLogInEditor
 } from '../../lib/logs/index';
+import AnimatedText from '../ui/AnimatedText';
 import Markdown from '../ui/Markdown';
 
 type Props = {
@@ -168,9 +168,9 @@ export default function LogViewerBox({ date, content, isActive, onRefresh, onLog
       {isGeneratingStandup && (
         <TitledBox borderStyle="round" titles={['Standup Notes']} borderColor="yellow">
           <Box paddingX={1} flexDirection="column">
-            <Text color="yellow">
-              <Spinner type="dots" /> Generating standup notes...
-            </Text>
+            <AnimatedText name="radar" config={{ baseColor: '#CC6600' }}>
+              Generating standup notes with Claude...
+            </AnimatedText>
             <Text dimColor>Press Esc to cancel</Text>
           </Box>
         </TitledBox>
