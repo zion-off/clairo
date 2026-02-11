@@ -291,7 +291,7 @@ export default function AllPullRequestsView({ isActive, onModalChange }: Props) 
   return (
     <Box flexDirection="column" flexGrow={1}>
       <TitledBox borderStyle="round" titles={['[5] Pull Requests']} borderColor={borderColor} flexGrow={1}>
-        <Box flexDirection="column" paddingX={1} flexGrow={1} overflow="hidden">
+        <Box flexDirection="column" paddingX={1} flexGrow={1} flexBasis={0} overflow="hidden">
           {/* Filter bar */}
           {(isSearching || hasActiveFilters) && (
             <Box>
@@ -321,33 +321,35 @@ export default function AllPullRequestsView({ isActive, onModalChange }: Props) 
             <Text dimColor>{hasActiveFilters ? 'No PRs match filter' : 'No open PRs'}</Text>
           )}
           {!loading && !error && prs.length > 0 && (
-            <ScrollView ref={scrollRef}>
-              {prs.map((pr, idx) => {
-                const isHighlighted = isActive && idx === highlightedIndex;
-                const cursor = isHighlighted ? '>' : ' ';
-                const review = resolveReviewDisplay(pr.reviewDecision);
-                const overallCheck = computeOverallCheck(pr.statusCheckRollup);
-                return (
-                  <Box key={pr.number} flexDirection="column">
-                    <Box>
-                      <Text color={isHighlighted ? 'yellow' : undefined}>{cursor} </Text>
-                      <Text>#{pr.number}</Text>
-                      <Text> {pr.title} </Text>
-                      {(pr.state !== 'OPEN' || pr.isDraft) && <Text color={stateColor(pr)}>[{stateLabel(pr)}]</Text>}
+            <Box flexGrow={1} flexBasis={0} overflow="hidden">
+              <ScrollView ref={scrollRef}>
+                {prs.map((pr, idx) => {
+                  const isHighlighted = isActive && idx === highlightedIndex;
+                  const cursor = isHighlighted ? '>' : ' ';
+                  const review = resolveReviewDisplay(pr.reviewDecision);
+                  const overallCheck = computeOverallCheck(pr.statusCheckRollup);
+                  return (
+                    <Box key={pr.number} flexDirection="column">
+                      <Box>
+                        <Text color={isHighlighted ? 'yellow' : undefined}>{cursor} </Text>
+                        <Text>#{pr.number}</Text>
+                        <Text> {pr.title} </Text>
+                        {(pr.state !== 'OPEN' || pr.isDraft) && <Text color={stateColor(pr)}>[{stateLabel(pr)}]</Text>}
+                      </Box>
+                      <Box>
+                        <Text> </Text>
+                        <Text dimColor>
+                          {' '}
+                          {pr.author.login} · {timeAgo(pr.createdAt)}
+                        </Text>
+                        {pr.reviewDecision && <Text dimColor> · {review.text}</Text>}
+                        {overallCheck && <Text color={CHECK_COLORS[overallCheck]}> {CHECK_ICONS[overallCheck]}</Text>}
+                      </Box>
                     </Box>
-                    <Box>
-                      <Text> </Text>
-                      <Text dimColor>
-                        {' '}
-                        {pr.author.login} · {timeAgo(pr.createdAt)}
-                      </Text>
-                      {pr.reviewDecision && <Text dimColor> · {review.text}</Text>}
-                      {overallCheck && <Text color={CHECK_COLORS[overallCheck]}> {CHECK_ICONS[overallCheck]}</Text>}
-                    </Box>
-                  </Box>
-                );
-              })}
-            </ScrollView>
+                  );
+                })}
+              </ScrollView>
+            </Box>
           )}
         </Box>
       </TitledBox>
