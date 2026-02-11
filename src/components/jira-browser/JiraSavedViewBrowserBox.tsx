@@ -18,6 +18,7 @@ type Props = {
   auth: JiraAuth | null;
   myAccountId: string | null;
   myDisplayName: string | null;
+  onFetchCurrentUser: () => Promise<{ accountId: string; displayName: string } | null>;
   isActive: boolean;
   onInputModeChange?: (active: boolean) => void;
   onLogUpdated?: () => void;
@@ -79,6 +80,7 @@ export default function JiraSavedViewBrowserBox({
   auth,
   myAccountId,
   myDisplayName,
+  onFetchCurrentUser,
   isActive,
   onInputModeChange,
   onLogUpdated
@@ -270,7 +272,11 @@ export default function JiraSavedViewBrowserBox({
         return;
       }
       if (input === 'm') {
-        setAssigneeFilter((f) => (f === 'me' ? 'all' : 'me'));
+        setAssigneeFilter((f) => {
+          if (f === 'me') return 'all';
+          if (!myAccountId) onFetchCurrentUser();
+          return 'me';
+        });
         setHighlightedIndex(0);
         return;
       }
@@ -311,6 +317,7 @@ export default function JiraSavedViewBrowserBox({
             auth={auth}
             myAccountId={myAccountId}
             myDisplayName={myDisplayName}
+            onFetchCurrentUser={onFetchCurrentUser}
             isActive={isActive}
             onClose={() => setDetailIssue(null)}
             onIssueUpdated={handleIssueUpdated}

@@ -38,6 +38,7 @@ export default function JiraBrowserView({
   const [myDisplayName, setMyDisplayName] = useState<string | null>(null);
   const [inputModeActive, setInputModeActive] = useState(false);
   const lastRepoRef = useRef<string | null>(null);
+  const fetchingUserRef = useRef(false);
 
   // Derive auth from repo config
   const auth = useMemo((): JiraAuth | null => {
@@ -61,19 +62,25 @@ export default function JiraBrowserView({
     }
   }, [repo.repoPath]);
 
-  // Fetch current user's account ID for "assigned to me" filter
-  useEffect(() => {
-    if (!auth) {
-      setMyAccountId(null);
-      return;
+  // Fetch current user — called on demand by children
+  const fetchCurrentUser = useCallback(async (): Promise<{
+    accountId: string;
+    displayName: string;
+  } | null> => {
+    if (myAccountId && myDisplayName) {
+      return { accountId: myAccountId, displayName: myDisplayName };
     }
-    getCurrentUser(auth).then((result) => {
-      if (result.success) {
-        setMyAccountId(result.data.accountId);
-        setMyDisplayName(result.data.displayName);
-      }
-    });
-  }, [auth?.siteUrl, auth?.email]);
+    if (!auth || fetchingUserRef.current) return null;
+    fetchingUserRef.current = true;
+    const result = await getCurrentUser(auth);
+    fetchingUserRef.current = false;
+    if (result.success) {
+      setMyAccountId(result.data.accountId);
+      setMyDisplayName(result.data.displayName);
+      return { accountId: result.data.accountId, displayName: result.data.displayName };
+    }
+    return null;
+  }, [auth, myAccountId, myDisplayName]);
 
   // Notify parent of modal/input-mode state
   useEffect(() => {
@@ -189,6 +196,7 @@ export default function JiraBrowserView({
         auth={auth}
         myAccountId={myAccountId}
         myDisplayName={myDisplayName}
+        onFetchCurrentUser={fetchCurrentUser}
         isActive={isActive && focusedBox === 'browser'}
         onInputModeChange={setInputModeActive}
         onLogUpdated={onLogUpdated}

@@ -29,6 +29,7 @@ type Props = {
   auth: JiraAuth;
   myAccountId: string | null;
   myDisplayName: string | null;
+  onFetchCurrentUser: () => Promise<{ accountId: string; displayName: string } | null>;
   isActive: boolean;
   onClose: () => void;
   onIssueUpdated: (
@@ -46,6 +47,7 @@ export default function JiraIssueDetailView({
   auth,
   myAccountId,
   myDisplayName,
+  onFetchCurrentUser,
   isActive,
   onClose,
   onIssueUpdated,
@@ -117,18 +119,31 @@ export default function JiraIssueDetailView({
   };
 
   const handleAssignToMe = async () => {
-    if (!myAccountId || !myDisplayName) return;
     setActionLoading('Assigning...');
     setActionError(null);
 
-    const result = await assignIssue(auth, issueKey, myAccountId);
+    let accountId = myAccountId;
+    let displayName = myDisplayName;
+
+    if (!accountId || !displayName) {
+      const user = await onFetchCurrentUser();
+      if (!user) {
+        setActionError('Failed to get current user');
+        setActionLoading(null);
+        return;
+      }
+      accountId = user.accountId;
+      displayName = user.displayName;
+    }
+
+    const result = await assignIssue(auth, issueKey, accountId);
     if (result.success) {
-      const assignee = { accountId: myAccountId, displayName: myDisplayName };
+      const assignee = { accountId, displayName };
       setDetail((prev) => (prev ? { ...prev, fields: { ...prev.fields, assignee } } : prev));
       onIssueUpdated(issueKey, { assignee });
 
-      duckEvents.emit('jira:assigned', { ticketKey: issueKey, assignee: myDisplayName });
-      logJiraAssigneeChanged(issueKey, issueSummary, 'assigned', myDisplayName);
+      duckEvents.emit('jira:assigned', { ticketKey: issueKey, assignee: displayName });
+      logJiraAssigneeChanged(issueKey, issueSummary, 'assigned', displayName);
       onLogUpdated?.();
     } else {
       setActionError(result.error);
@@ -186,7 +201,7 @@ export default function JiraIssueDetailView({
       if (input === 's' && !actionLoading) {
         openTransitionPicker();
       }
-      if (input === 'a' && !actionLoading && myAccountId) {
+      if (input === 'a' && !actionLoading) {
         handleAssignToMe();
       }
       if (input === 'A' && !actionLoading) {
