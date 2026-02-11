@@ -150,7 +150,7 @@ export default function JiraBrowserView({
       if (input === '5') onFocusedBoxChange('saved-views');
       if (input === '6') onFocusedBoxChange('browser');
     },
-    { isActive: isActive && !modal.isOpen }
+    { isActive: isActive && !modal.isOpen && !inputModeActive }
   );
 
   // Modal rendering
