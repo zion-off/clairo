@@ -1,6 +1,5 @@
 import open from 'open';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { TitledBox } from '@mishieck/ink-titled-box';
 import { Box, Text, useInput } from 'ink';
 import { ScrollView } from 'ink-scroll-view';
 import Spinner from 'ink-spinner';
@@ -9,6 +8,7 @@ import { copyToClipboard } from '../../lib/clipboard';
 import { SavedJiraView } from '../../lib/config/index';
 import { JiraAuth } from '../../lib/jira/api';
 import { JiraSearchIssue, JiraSprint, fetchViewIssues } from '../../lib/jira/search';
+import TitledBox from '../ui/TitledBox';
 import JiraIssueDetailView from './JiraIssueDetailView';
 
 type AssigneeFilter = 'all' | 'unassigned' | 'me';
@@ -294,6 +294,9 @@ export default function JiraSavedViewBrowserBox({
     { isActive }
   );
 
+  const scrollRatio =
+    isActive && !detailIssue && navigableIndices.length > 1 ? highlightedIndex / (navigableIndices.length - 1) : null;
+
   // Build filter status line
   const filterParts: string[] = [];
   if (assigneeFilter === 'unassigned') filterParts.push('unassigned');
@@ -301,7 +304,7 @@ export default function JiraSavedViewBrowserBox({
   if (searchText) filterParts.push(`"${searchText}"`);
 
   return (
-    <TitledBox borderStyle="round" titles={[displayTitle]} borderColor={borderColor} flexGrow={1}>
+    <TitledBox title={displayTitle} borderColor={borderColor} scrollRatio={scrollRatio}>
       <Box flexDirection="column" flexGrow={1}>
         {detailIssue && auth ? (
           <JiraIssueDetailView

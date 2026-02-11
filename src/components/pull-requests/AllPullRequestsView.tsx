@@ -1,6 +1,5 @@
 import open from 'open';
 import { useCallback, useEffect, useState } from 'react';
-import { TitledBox } from '@mishieck/ink-titled-box';
 import { Box, Text, useInput } from 'ink';
 import { ScrollView } from 'ink-scroll-view';
 import Spinner from 'ink-spinner';
@@ -21,6 +20,7 @@ import {
 } from '../../lib/github/index';
 import { checkoutPR, listPRs } from '../../lib/github/pr-list';
 import PRDetailsBox from '../github/PRDetailsBox';
+import TitledBox from '../ui/TitledBox';
 
 type PRState = 'open' | 'closed' | 'all';
 
@@ -247,6 +247,7 @@ export default function AllPullRequestsView({ isActive, onModalChange }: Props) 
   if (searchText) filterParts.push(`"${searchText}"`);
 
   const borderColor = isActive ? 'yellow' : undefined;
+  const scrollRatio = isActive && prs.length > 1 ? highlightedIndex / (prs.length - 1) : null;
 
   const stateColor = (pr: PRListItem) => {
     const display = resolveMergeDisplay({
@@ -289,70 +290,68 @@ export default function AllPullRequestsView({ isActive, onModalChange }: Props) 
   }
 
   return (
-    <Box flexDirection="column" flexGrow={1}>
-      <TitledBox borderStyle="round" titles={['[5] Pull Requests']} borderColor={borderColor} flexGrow={1}>
-        <Box flexDirection="column" paddingX={1} flexGrow={1} flexBasis={0} overflow="hidden">
-          {/* Filter bar */}
-          {(isSearching || hasActiveFilters) && (
-            <Box>
-              <Text color="blue">Filter: </Text>
-              {isSearching ? (
-                <>
-                  <Text>{inputText}</Text>
-                  <Text backgroundColor="yellow"> </Text>
-                </>
-              ) : (
-                <>
-                  <Text>{filterParts.join(' + ')}</Text>
-                  <Text dimColor> ({prs.length})</Text>
-                </>
-              )}
-            </Box>
-          )}
+    <TitledBox title="[5] Pull Requests" borderColor={borderColor} scrollRatio={scrollRatio}>
+      <Box flexDirection="column" paddingX={1} flexGrow={1} flexBasis={0} overflow="hidden">
+        {/* Filter bar */}
+        {(isSearching || hasActiveFilters) && (
+          <Box>
+            <Text color="blue">Filter: </Text>
+            {isSearching ? (
+              <>
+                <Text>{inputText}</Text>
+                <Text backgroundColor="yellow"> </Text>
+              </>
+            ) : (
+              <>
+                <Text>{filterParts.join(' + ')}</Text>
+                <Text dimColor> ({prs.length})</Text>
+              </>
+            )}
+          </Box>
+        )}
 
-          {/* Content */}
-          {loading && (
-            <Text color="yellow">
-              <Spinner type="dots" /> Loading PRs 1-{limit}...
-            </Text>
-          )}
-          {error && <Text color="red">{error}</Text>}
-          {!loading && !error && prs.length === 0 && (
-            <Text dimColor>{hasActiveFilters ? 'No PRs match filter' : 'No open PRs'}</Text>
-          )}
-          {!loading && !error && prs.length > 0 && (
-            <Box flexGrow={1} flexBasis={0} overflow="hidden">
-              <ScrollView ref={scrollRef}>
-                {prs.map((pr, idx) => {
-                  const isHighlighted = isActive && idx === highlightedIndex;
-                  const cursor = isHighlighted ? '>' : ' ';
-                  const review = resolveReviewDisplay(pr.reviewDecision);
-                  const overallCheck = computeOverallCheck(pr.statusCheckRollup);
-                  return (
-                    <Box key={pr.number} flexDirection="column">
-                      <Box>
-                        <Text color={isHighlighted ? 'yellow' : undefined}>{cursor} </Text>
-                        <Text>#{pr.number}</Text>
-                        <Text> {pr.title} </Text>
-                        {(pr.state !== 'OPEN' || pr.isDraft) && <Text color={stateColor(pr)}>[{stateLabel(pr)}]</Text>}
-                      </Box>
-                      <Box>
-                        <Text> </Text>
-                        <Text dimColor>
-                          {' '}
-                          {pr.author.login} · {timeAgo(pr.createdAt)}
-                        </Text>
-                        {pr.reviewDecision && <Text dimColor> · {review.text}</Text>}
-                        {overallCheck && <Text color={CHECK_COLORS[overallCheck]}> {CHECK_ICONS[overallCheck]}</Text>}
-                      </Box>
+        {/* Content */}
+        {loading && (
+          <Text color="yellow">
+            <Spinner type="dots" /> Loading PRs 1-{limit}...
+          </Text>
+        )}
+        {error && <Text color="red">{error}</Text>}
+        {!loading && !error && prs.length === 0 && (
+          <Text dimColor>{hasActiveFilters ? 'No PRs match filter' : 'No open PRs'}</Text>
+        )}
+        {!loading && !error && prs.length > 0 && (
+          <Box flexGrow={1} flexBasis={0} overflow="hidden">
+            <ScrollView ref={scrollRef}>
+              {prs.map((pr, idx) => {
+                const isHighlighted = isActive && idx === highlightedIndex;
+                const cursor = isHighlighted ? '>' : ' ';
+                const review = resolveReviewDisplay(pr.reviewDecision);
+                const overallCheck = computeOverallCheck(pr.statusCheckRollup);
+                return (
+                  <Box key={pr.number} flexDirection="column">
+                    <Box>
+                      <Text color={isHighlighted ? 'yellow' : undefined}>{cursor} </Text>
+                      <Text>#{pr.number}</Text>
+                      <Text> {pr.title} </Text>
+                      {(pr.state !== 'OPEN' || pr.isDraft) && <Text color={stateColor(pr)}>[{stateLabel(pr)}]</Text>}
                     </Box>
-                  );
-                })}
-              </ScrollView>
-            </Box>
-          )}
-        </Box>
-      </TitledBox>
-    </Box>
+                    <Box>
+                      <Text> </Text>
+                      <Text dimColor>
+                        {' '}
+                        {pr.author.login} · {timeAgo(pr.createdAt)}
+                      </Text>
+                      {pr.reviewDecision && <Text dimColor> · {review.text}</Text>}
+                      {overallCheck && <Text color={CHECK_COLORS[overallCheck]}> {CHECK_ICONS[overallCheck]}</Text>}
+                    </Box>
+                  </Box>
+                );
+              })}
+            </ScrollView>
+          </Box>
+        )}
+      </Box>
+    </TitledBox>
   );
 }
