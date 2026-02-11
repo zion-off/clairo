@@ -2,6 +2,8 @@
 
 dashboard tui for github PRs, jira tickets, and daily logs.
 
+<img width="1728" height="1056" alt="clairo" src="https://github.com/user-attachments/assets/7bf63805-c7fd-4741-bb44-6f9449ba6de3" />
+
 ## features
 
 - github dashboard
