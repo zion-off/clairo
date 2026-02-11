@@ -2,7 +2,7 @@ import { spawnSync } from 'child_process';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
-import { LogFile } from './types.js';
+import { LogFile } from './types';
 
 const LOGS_DIRECTORY = join(homedir(), '.clairo', 'logs');
 
@@ -164,4 +164,4 @@ export function openLogInEditor(date: string): boolean {
   return result.status === 0;
 }
 
-export * from './types.js';
+export * from './types';

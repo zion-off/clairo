@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
-import TextInput from '../ui/TextInput.js';
+import TextInput from '../ui/TextInput';
 
 type Props = {
   onSubmit: (ticketInput: string) => void;

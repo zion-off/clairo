@@ -1,4 +1,4 @@
-import { Keybinding } from '../components/ui/KeybindingsBar.js';
+import { Keybinding } from '../components/ui/KeybindingsBar';
 
 export type JiraState = 'not_configured' | 'no_tickets' | 'has_tickets';
 

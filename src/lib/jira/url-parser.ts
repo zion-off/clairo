@@ -1,4 +1,4 @@
-import { JiraViewSource } from '../config/index.js';
+import { JiraViewSource } from '../config/index';
 
 /**
  * Parse a Jira URL into a view source.

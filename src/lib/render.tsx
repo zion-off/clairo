@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { RenderOptions, render as inkRender } from 'ink';
-import { Screen } from './Screen.js';
+import { Screen } from './Screen';
 
 const ENTER_ALT_BUFFER = '\x1b[?1049h';
 const EXIT_ALT_BUFFER = '\x1b[?1049l';

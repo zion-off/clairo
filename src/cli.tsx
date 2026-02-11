@@ -1,6 +1,6 @@
 import meow from 'meow';
-import App from './app.js';
-import { render } from './lib/render.js';
+import App from './app';
+import { render } from './lib/render';
 
 const cli = meow(
   `

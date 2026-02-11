@@ -12,10 +12,10 @@ import {
   resolveMergeDisplay,
   resolveReviewDisplay,
   timeAgo
-} from '../../lib/github/index.js';
-import Badge from '../ui/Badge.js';
-import Divider from '../ui/Divider.js';
-import Markdown from '../ui/Markdown.js';
+} from '../../lib/github/index';
+import Badge from '../ui/Badge';
+import Divider from '../ui/Divider';
+import Markdown from '../ui/Markdown';
 
 type Props = {
   pr: PRDetails | null;

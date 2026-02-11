@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { ScrollView } from 'ink-scroll-view';
-import { useScrollToIndex } from '../../hooks/index.js';
-import { openInEditor } from '../../lib/editor.js';
-import { ExistingJiraConfig } from '../../lib/jira/config.js';
+import { useScrollToIndex } from '../../hooks/index';
+import { openInEditor } from '../../lib/editor';
+import { ExistingJiraConfig } from '../../lib/jira/config';
 
 const MAX_VISIBLE_ITEMS = 4;
 

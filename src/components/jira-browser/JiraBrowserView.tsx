@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, useInput } from 'ink';
-import { JiraBrowserFocusedBox } from '../../constants/jira-browser.js';
-import { useGitRepo } from '../../hooks/github/index.js';
-import { useModal } from '../../hooks/index.js';
-import { SavedJiraView } from '../../lib/config/index.js';
-import { JiraAuth, getCurrentUser } from '../../lib/jira/api.js';
-import { getJiraCredentials, getJiraSiteUrl, isJiraConfigured } from '../../lib/jira/config.js';
-import { parseJiraUrl } from '../../lib/jira/url-parser.js';
-import { addSavedView, getSavedViews, removeSavedView, renameSavedView } from '../../lib/jira/views.js';
-import AddViewModal from './AddViewModal.js';
-import JiraSavedViewBrowserBox from './JiraSavedViewBrowserBox.js';
-import JiraSavedViewsBox from './JiraSavedViewsBox.js';
+import { JiraBrowserFocusedBox } from '../../constants/jira-browser';
+import { useGitRepo } from '../../hooks/github/index';
+import { useModal } from '../../hooks/index';
+import { SavedJiraView } from '../../lib/config/index';
+import { JiraAuth, getCurrentUser } from '../../lib/jira/api';
+import { getJiraCredentials, getJiraSiteUrl, isJiraConfigured } from '../../lib/jira/config';
+import { parseJiraUrl } from '../../lib/jira/url-parser';
+import { addSavedView, getSavedViews, removeSavedView, renameSavedView } from '../../lib/jira/views';
+import AddViewModal from './AddViewModal';
+import JiraSavedViewBrowserBox from './JiraSavedViewBrowserBox';
+import JiraSavedViewsBox from './JiraSavedViewsBox';
 
 type Props = {
   isActive: boolean;

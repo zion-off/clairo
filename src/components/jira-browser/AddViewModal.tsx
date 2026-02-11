@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
-import { generateViewName } from '../../lib/jira/url-parser.js';
-import TextInput from '../ui/TextInput.js';
+import { generateViewName } from '../../lib/jira/url-parser';
+import TextInput from '../ui/TextInput';
 
 type Props = {
   onSubmit: (url: string, name: string) => void;

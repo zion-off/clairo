@@ -1,6 +1,6 @@
-import { SavedJiraView } from '../config/index.js';
-import { JiraAuth, jiraFetch } from './api.js';
-import { JiraResult } from './types.js';
+import { SavedJiraView } from '../config/index';
+import { JiraAuth, jiraFetch } from './api';
+import { JiraResult } from './types';
 
 export type JiraSprint = {
   id: number;

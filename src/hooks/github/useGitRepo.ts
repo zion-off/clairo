@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { duckEvents } from '../../lib/duckEvents.js';
-import { getSelectedRemote, updateRepoConfig } from '../../lib/github/config.js';
-import { GitRemote, getCurrentBranch, getRepoRoot, isGitRepo, listRemotes } from '../../lib/github/git.js';
-import { getRepoFromRemote } from '../../lib/github/index.js';
-import { useTerminalFocus } from '../useTerminalFocus.js';
+import { duckEvents } from '../../lib/duckEvents';
+import { getSelectedRemote, updateRepoConfig } from '../../lib/github/config';
+import { GitRemote, getCurrentBranch, getRepoRoot, isGitRepo, listRemotes } from '../../lib/github/git';
+import { getRepoFromRemote } from '../../lib/github/index';
+import { useTerminalFocus } from '../useTerminalFocus';
 
 export function useGitRepo() {
   const [isRepo, setIsRepo] = useState<boolean | null>(null);

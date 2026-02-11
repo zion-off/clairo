@@ -4,10 +4,10 @@ import { Box, Text, useInput } from 'ink';
 import { ScrollView, ScrollViewRef } from 'ink-scroll-view';
 import SelectInput from 'ink-select-input';
 import Spinner from 'ink-spinner';
-import { copyToClipboard } from '../../lib/clipboard.js';
-import { duckEvents } from '../../lib/duckEvents.js';
-import { timeAgo } from '../../lib/github/index.js';
-import { adfToMarkdown } from '../../lib/jira/adf-to-markdown.js';
+import { copyToClipboard } from '../../lib/clipboard';
+import { duckEvents } from '../../lib/duckEvents';
+import { timeAgo } from '../../lib/github/index';
+import { adfToMarkdown } from '../../lib/jira/adf-to-markdown';
 import {
   JiraAuth,
   JiraComment,
@@ -18,10 +18,10 @@ import {
   getIssueDetail,
   getTransitions,
   unassignIssue
-} from '../../lib/jira/index.js';
-import { logJiraAssigneeChanged, logJiraStatusChanged } from '../../lib/logs/logger.js';
-import Divider from '../ui/Divider.js';
-import Markdown from '../ui/Markdown.js';
+} from '../../lib/jira/index';
+import { logJiraAssigneeChanged, logJiraStatusChanged } from '../../lib/logs/logger';
+import Divider from '../ui/Divider';
+import Markdown from '../ui/Markdown';
 
 type Props = {
   issueKey: string;

@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
-import { duckEvents } from '../../lib/duckEvents.js';
-import { PRDetails, PRListItem, getPRDetails, listPRsForBranch } from '../../lib/github/index.js';
-import { usePRPolling } from './usePRPolling.js';
+import { duckEvents } from '../../lib/duckEvents';
+import { PRDetails, PRListItem, getPRDetails, listPRsForBranch } from '../../lib/github/index';
+import { usePRPolling } from './usePRPolling';
 
 export function usePullRequests() {
   const [prs, setPrs] = useState<PRListItem[]>([]);

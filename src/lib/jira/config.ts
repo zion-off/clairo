@@ -1,5 +1,5 @@
-import { LinkedTicket, loadConfig } from '../config/index.js';
-import { getRepoConfig, updateRepoConfig } from '../github/config.js';
+import { LinkedTicket, loadConfig } from '../config/index';
+import { getRepoConfig, updateRepoConfig } from '../github/config';
 
 export type ExistingJiraConfig = {
   repoPath: string;

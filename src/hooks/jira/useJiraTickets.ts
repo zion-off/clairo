@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
-import { duckEvents } from '../../lib/duckEvents.js';
-import { listPRsForBranch } from '../../lib/github/index.js';
+import { duckEvents } from '../../lib/duckEvents';
+import { listPRsForBranch } from '../../lib/github/index';
 import {
   JiraAuth,
   LinkedTicket,
@@ -16,7 +16,7 @@ import {
   setJiraCredentials,
   setJiraSiteUrl,
   validateCredentials
-} from '../../lib/jira/index.js';
+} from '../../lib/jira/index';
 
 export type JiraState = 'not_configured' | 'no_tickets' | 'has_tickets';
 

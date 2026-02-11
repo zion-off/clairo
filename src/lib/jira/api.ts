@@ -1,4 +1,4 @@
-import { JiraIssue, JiraResult } from './types.js';
+import { JiraIssue, JiraResult } from './types';
 
 export type JiraAuth = {
   siteUrl: string;

@@ -1,23 +1,23 @@
 import open from 'open';
 import { useEffect, useRef } from 'react';
-import LinkTicketModal from './LinkTicketModal.js';
+import LinkTicketModal from './LinkTicketModal';
 import { TitledBox } from '@mishieck/ink-titled-box';
 import { Box, Text, useInput } from 'ink';
-import { useGitRepo } from '../../hooks/github/index.js';
-import { useListNavigation, useModal } from '../../hooks/index.js';
-import { JiraState, useJiraTickets } from '../../hooks/jira/index.js';
-import { copyToClipboard } from '../../lib/clipboard.js';
+import { useGitRepo } from '../../hooks/github/index';
+import { useListNavigation, useModal } from '../../hooks/index';
+import { JiraState, useJiraTickets } from '../../hooks/jira/index';
+import { copyToClipboard } from '../../lib/clipboard';
 import {
   clearJiraConfig,
   getExistingJiraConfigs,
   getJiraCredentials,
   getJiraSiteUrl,
   updateTicketStatus
-} from '../../lib/jira/index.js';
-import { logJiraStatusChanged } from '../../lib/logs/logger.js';
-import ChangeStatusModal from './ChangeStatusModal.js';
-import ConfigureJiraSiteModal from './ConfigureJiraSiteModal.js';
-import TicketItem from './TicketItem.js';
+} from '../../lib/jira/index';
+import { logJiraStatusChanged } from '../../lib/logs/logger';
+import ChangeStatusModal from './ChangeStatusModal';
+import ConfigureJiraSiteModal from './ConfigureJiraSiteModal';
+import TicketItem from './TicketItem';
 
 type JiraModalType = 'configure' | 'link' | 'status';
 

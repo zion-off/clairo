@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { DUCK_MESSAGES, pickReactionMessage } from '../constants/duck.js';
-import { loadConfig, saveConfig } from '../lib/config/index.js';
-import { duckEvents } from '../lib/duckEvents.js';
+import { DUCK_MESSAGES, pickReactionMessage } from '../constants/duck';
+import { loadConfig, saveConfig } from '../lib/config/index';
+import { duckEvents } from '../lib/duckEvents';
 
 type DuckState = {
   visible: boolean;

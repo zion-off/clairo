@@ -1,4 +1,4 @@
-export type { LinkedTicket } from '../config/index.js';
+export type { LinkedTicket } from '../config/index';
 
 export type JiraResult<T> =
   | { success: true; data: T }

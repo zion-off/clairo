@@ -4,7 +4,7 @@ import { Box, Text, useInput } from 'ink';
 import { ScrollView, ScrollViewRef } from 'ink-scroll-view';
 import Spinner from 'ink-spinner';
 import TextInput from 'ink-text-input';
-import { ClaudeProcess, generateStandupNotes } from '../../lib/claude/index.js';
+import { ClaudeProcess, generateStandupNotes } from '../../lib/claude/index';
 import {
   appendToLog,
   createEmptyLog,
@@ -12,8 +12,8 @@ import {
   getTodayDate,
   logExists,
   openLogInEditor
-} from '../../lib/logs/index.js';
-import Markdown from '../ui/Markdown.js';
+} from '../../lib/logs/index';
+import Markdown from '../ui/Markdown';
 
 type Props = {
   date: string | null;

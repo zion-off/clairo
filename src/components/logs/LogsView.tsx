@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import { Box, useInput } from 'ink';
-import { LogsFocusedBox } from '../../constants/logs.js';
-import { useLogs } from '../../hooks/logs/index.js';
-import LogViewerBox from './LogViewerBox.js';
-import LogsHistoryBox from './LogsHistoryBox.js';
+import { LogsFocusedBox } from '../../constants/logs';
+import { useLogs } from '../../hooks/logs/index';
+import LogViewerBox from './LogViewerBox';
+import LogsHistoryBox from './LogsHistoryBox';
 
 type Props = {
   isActive: boolean;

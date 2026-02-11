@@ -4,9 +4,9 @@ import { TitledBox } from '@mishieck/ink-titled-box';
 import { Box, Text, useInput } from 'ink';
 import { ScrollView } from 'ink-scroll-view';
 import Spinner from 'ink-spinner';
-import { useListNavigation } from '../../hooks/index.js';
-import { copyToClipboard } from '../../lib/clipboard.js';
-import { PRListItem } from '../../lib/github/index.js';
+import { useListNavigation } from '../../hooks/index';
+import { copyToClipboard } from '../../lib/clipboard';
+import { PRListItem } from '../../lib/github/index';
 
 type Props = {
   prs: PRListItem[];

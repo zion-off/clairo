@@ -4,12 +4,12 @@ import { TitledBox } from '@mishieck/ink-titled-box';
 import { Box, Text, useInput } from 'ink';
 import { ScrollView } from 'ink-scroll-view';
 import Spinner from 'ink-spinner';
-import { useScrollToIndex } from '../../hooks/index.js';
-import { copyToClipboard } from '../../lib/clipboard.js';
-import { SavedJiraView } from '../../lib/config/index.js';
-import { JiraAuth } from '../../lib/jira/api.js';
-import { JiraSearchIssue, JiraSprint, fetchViewIssues } from '../../lib/jira/search.js';
-import JiraIssueDetailView from './JiraIssueDetailView.js';
+import { useScrollToIndex } from '../../hooks/index';
+import { copyToClipboard } from '../../lib/clipboard';
+import { SavedJiraView } from '../../lib/config/index';
+import { JiraAuth } from '../../lib/jira/api';
+import { JiraSearchIssue, JiraSprint, fetchViewIssues } from '../../lib/jira/search';
+import JiraIssueDetailView from './JiraIssueDetailView';
 
 type AssigneeFilter = 'all' | 'unassigned' | 'me';
 

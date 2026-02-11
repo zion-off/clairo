@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { LogFile, getTodayDate, listLogFiles, readLog } from '../../lib/logs/index.js';
+import { LogFile, getTodayDate, listLogFiles, readLog } from '../../lib/logs/index';
 
 export function useLogs() {
   const [logFiles, setLogFiles] = useState<LogFile[]>([]);

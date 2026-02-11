@@ -1,2 +1,2 @@
-export { useGitRepo } from './useGitRepo.js';
-export { usePullRequests } from './usePullRequests.js';
+export { useGitRepo } from './useGitRepo';
+export { usePullRequests } from './usePullRequests';

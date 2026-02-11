@@ -1,3 +1,3 @@
-export { default as LogsView } from './LogsView.js';
-export { default as LogsHistoryBox } from './LogsHistoryBox.js';
-export { default as LogViewerBox } from './LogViewerBox.js';
+export { default as LogsView } from './LogsView';
+export { default as LogsHistoryBox } from './LogsHistoryBox';
+export { default as LogViewerBox } from './LogViewerBox';

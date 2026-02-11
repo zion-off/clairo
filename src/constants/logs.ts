@@ -1,4 +1,4 @@
-import { Keybinding } from '../components/ui/KeybindingsBar.js';
+import { Keybinding } from '../components/ui/KeybindingsBar';
 
 export type LogsFocusedBox = 'history' | 'viewer';
 

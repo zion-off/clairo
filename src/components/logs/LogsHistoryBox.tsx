@@ -1,8 +1,8 @@
 import { TitledBox } from '@mishieck/ink-titled-box';
 import { Box, Text, useInput } from 'ink';
 import { ScrollView } from 'ink-scroll-view';
-import { useScrollToIndex } from '../../hooks/index.js';
-import { LogFile } from '../../lib/logs/index.js';
+import { useScrollToIndex } from '../../hooks/index';
+import { LogFile } from '../../lib/logs/index';
 
 type Props = {
   logFiles: LogFile[];

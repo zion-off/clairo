@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useInput } from 'ink';
-import { useScrollToIndex } from './useScrollToIndex.js';
+import { useScrollToIndex } from './useScrollToIndex';
 
 type UseListNavigationOptions<T> = {
   items: T[];

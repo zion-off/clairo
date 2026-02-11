@@ -1,4 +1,4 @@
-import { Keybinding } from '../components/ui/KeybindingsBar.js';
+import { Keybinding } from '../components/ui/KeybindingsBar';
 
 export type GitHubFocusedBox = 'remotes' | 'prs' | 'details';
 

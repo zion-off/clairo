@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import SelectInput from 'ink-select-input';
-import { duckEvents } from '../../lib/duckEvents.js';
+import { duckEvents } from '../../lib/duckEvents';
 import {
   JiraAuth,
   JiraTransition,
@@ -9,7 +9,7 @@ import {
   getJiraCredentials,
   getJiraSiteUrl,
   getTransitions
-} from '../../lib/jira/index.js';
+} from '../../lib/jira/index';
 
 type Props = {
   repoPath: string;

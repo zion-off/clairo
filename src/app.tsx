@@ -1,16 +1,16 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Box, Text, useApp, useInput } from 'ink';
-import GitHubView from './components/github/GitHubView.js';
-import { JiraBrowserView } from './components/jira-browser/index.js';
-import { JiraView } from './components/jira/index.js';
-import { LogsView } from './components/logs/index.js';
-import KeybindingsBar from './components/ui/KeybindingsBar.js';
-import { GitHubFocusedBox } from './constants/github.js';
-import { JiraBrowserFocusedBox } from './constants/jira-browser.js';
-import { LogsFocusedBox } from './constants/logs.js';
-import { COLUMN2_TABS, TabId } from './constants/tabs.js';
-import { useRubberDuck } from './hooks/index.js';
-import { FocusedView, JiraState, computeKeybindings } from './lib/keybindings.js';
+import GitHubView from './components/github/GitHubView';
+import { JiraBrowserView } from './components/jira-browser/index';
+import { JiraView } from './components/jira/index';
+import { LogsView } from './components/logs/index';
+import KeybindingsBar from './components/ui/KeybindingsBar';
+import { GitHubFocusedBox } from './constants/github';
+import { JiraBrowserFocusedBox } from './constants/jira-browser';
+import { LogsFocusedBox } from './constants/logs';
+import { COLUMN2_TABS, TabId } from './constants/tabs';
+import { useRubberDuck } from './hooks/index';
+import { FocusedView, JiraState, computeKeybindings } from './lib/keybindings';
 
 export default function App() {
   const { exit } = useApp();

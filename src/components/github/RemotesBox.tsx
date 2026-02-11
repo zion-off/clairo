@@ -1,8 +1,8 @@
 import { TitledBox } from '@mishieck/ink-titled-box';
 import { Box, Text } from 'ink';
 import { ScrollView } from 'ink-scroll-view';
-import { useListNavigation } from '../../hooks/index.js';
-import { GitRemote } from '../../lib/github/git.js';
+import { useListNavigation } from '../../hooks/index';
+import { GitRemote } from '../../lib/github/git';
 
 type Props = {
   remotes: GitRemote[];

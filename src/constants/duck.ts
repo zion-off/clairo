@@ -1,4 +1,4 @@
-import { DuckEvent, DuckEventPayload } from '../lib/duckEvents.js';
+import { DuckEvent, DuckEventPayload } from '../lib/duckEvents';
 
 // -- Themed general messages (shown on toggle / quack) --
 

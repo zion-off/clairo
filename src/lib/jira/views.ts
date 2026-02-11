@@ -1,5 +1,5 @@
-import { JiraViewSource, SavedJiraView } from '../config/index.js';
-import { getRepoConfig, updateRepoConfig } from '../github/config.js';
+import { JiraViewSource, SavedJiraView } from '../config/index';
+import { getRepoConfig, updateRepoConfig } from '../github/config';
 
 /**
  * Get all saved Jira views for a repository

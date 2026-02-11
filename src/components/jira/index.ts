@@ -1,4 +1,4 @@
-export { default as JiraView } from './JiraView.js';
-export { default as TicketItem } from './TicketItem.js';
-export { default as ConfigureJiraSiteModal } from './ConfigureJiraSiteModal.js';
-export { default as LinkTicketModal } from './LinkTicketModal.js';
+export { default as JiraView } from './JiraView';
+export { default as TicketItem } from './TicketItem';
+export { default as ConfigureJiraSiteModal } from './ConfigureJiraSiteModal';
+export { default as LinkTicketModal } from './LinkTicketModal';

@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { TitledBox } from '@mishieck/ink-titled-box';
 import { Box, Text, useInput } from 'ink';
 import { ScrollView } from 'ink-scroll-view';
-import { useScrollToIndex } from '../../hooks/index.js';
-import { SavedJiraView } from '../../lib/config/index.js';
-import TextInput from '../ui/TextInput.js';
+import { useScrollToIndex } from '../../hooks/index';
+import { SavedJiraView } from '../../lib/config/index';
+import TextInput from '../ui/TextInput';
 
 type Props = {
   views: SavedJiraView[];

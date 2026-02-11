@@ -1,8 +1,8 @@
-import { Keybinding } from '../components/ui/KeybindingsBar.js';
-import { GITHUB_KEYBINDINGS, GitHubFocusedBox } from '../constants/github.js';
-import { JIRA_BROWSER_KEYBINDINGS, JiraBrowserFocusedBox } from '../constants/jira-browser.js';
-import { JIRA_KEYBINDINGS } from '../constants/jira.js';
-import { LOGS_KEYBINDINGS, LogsFocusedBox } from '../constants/logs.js';
+import { Keybinding } from '../components/ui/KeybindingsBar';
+import { GITHUB_KEYBINDINGS, GitHubFocusedBox } from '../constants/github';
+import { JIRA_KEYBINDINGS } from '../constants/jira';
+import { JIRA_BROWSER_KEYBINDINGS, JiraBrowserFocusedBox } from '../constants/jira-browser';
+import { LOGS_KEYBINDINGS, LogsFocusedBox } from '../constants/logs';
 
 export type FocusedView = 'github' | 'jira' | 'logs' | 'jira-browser';
 

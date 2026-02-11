@@ -2,17 +2,17 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { TitledBox } from '@mishieck/ink-titled-box';
 import { Box, Text, useInput } from 'ink';
 import { ScrollView, ScrollViewRef } from 'ink-scroll-view';
-import { GitHubFocusedBox } from '../../constants/github.js';
-import { useGitRepo, usePullRequests } from '../../hooks/github/index.js';
-import { ClaudeProcess, generatePRContent } from '../../lib/claude/index.js';
-import { duckEvents } from '../../lib/duckEvents.js';
-import { findRemoteWithBranch } from '../../lib/github/git.js';
-import { editPRDescription, openPRCreationPage, openPRCreationPageWithContent } from '../../lib/github/index.js';
-import { getJiraSiteUrl, getLinkedTickets } from '../../lib/jira/index.js';
-import { logPRCreated } from '../../lib/logs/logger.js';
-import PRDetailsBox from './PRDetailsBox.js';
-import PullRequestsBox from './PullRequestsBox.js';
-import RemotesBox from './RemotesBox.js';
+import { GitHubFocusedBox } from '../../constants/github';
+import { useGitRepo, usePullRequests } from '../../hooks/github/index';
+import { ClaudeProcess, generatePRContent } from '../../lib/claude/index';
+import { duckEvents } from '../../lib/duckEvents';
+import { findRemoteWithBranch } from '../../lib/github/git';
+import { editPRDescription, openPRCreationPage, openPRCreationPageWithContent } from '../../lib/github/index';
+import { getJiraSiteUrl, getLinkedTickets } from '../../lib/jira/index';
+import { logPRCreated } from '../../lib/logs/logger';
+import PRDetailsBox from './PRDetailsBox';
+import PullRequestsBox from './PullRequestsBox';
+import RemotesBox from './RemotesBox';
 
 type Props = {
   isActive: boolean;

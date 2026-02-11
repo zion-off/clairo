@@ -1,1 +1,1 @@
-export * from './useLogs.js';
+export * from './useLogs';

@@ -1,4 +1,4 @@
-import { RepositoryConfig, loadConfig, saveConfig } from '../config/index.js';
+import { RepositoryConfig, loadConfig, saveConfig } from '../config/index';
 
 /**
  * Get config for a specific repository

@@ -1,5 +1,5 @@
 import { ChildProcess, exec } from 'child_process';
-import { ClaudeResult } from './types.js';
+import { ClaudeResult } from './types';
 
 export type ClaudeProcess = {
   promise: Promise<ClaudeResult<string>>;

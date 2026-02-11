@@ -1,4 +1,4 @@
-import { appendToLog, formatTimestamp, getTodayDate } from './index.js';
+import { appendToLog, formatTimestamp, getTodayDate } from './index';
 
 /**
  * Log a PR creation event
