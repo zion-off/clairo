@@ -251,7 +251,7 @@ export default function JiraSavedViewBrowserBox({
           const url = getIssueUrl(currentIssue);
           if (url) copyToClipboard(url);
         }
-        if (key.return && currentIssue && auth) {
+        if (input === ' ' && currentIssue && auth) {
           setDetailIssue({ key: currentIssue.key, summary: currentIssue.fields.summary });
         }
       }

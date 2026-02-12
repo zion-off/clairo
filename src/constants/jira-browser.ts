@@ -10,7 +10,7 @@ export const JIRA_BROWSER_KEYBINDINGS: Record<JiraBrowserFocusedBox, Keybinding[
     { key: 'd', label: 'Delete', color: 'red' }
   ],
   browser: [
-    { key: 'Enter', label: 'Details' },
+    { key: 'Space', label: 'Details' },
     { key: '/', label: 'Filter' },
     { key: 'u', label: 'Unassigned' },
     { key: 'm', label: 'Mine' },
