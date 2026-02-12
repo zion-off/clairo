@@ -1,6 +1,6 @@
 import open from 'open';
 import { useRef } from 'react';
-import { Box, Text, useInput, useStdout } from 'ink';
+import { Box, Text, useInput } from 'ink';
 import { ScrollView, ScrollViewRef } from 'ink-scroll-view';
 import Spinner from 'ink-spinner';
 import {
@@ -17,6 +17,7 @@ import {
 import Badge from '../ui/Badge';
 import Divider from '../ui/Divider';
 import Markdown from '../ui/Markdown';
+import TitledBox from '../ui/TitledBox';
 
 type Props = {
   pr: PRDetails | null;
@@ -24,9 +25,10 @@ type Props = {
   error?: string;
   isActive: boolean;
   title?: string;
+  footer?: React.ReactNode;
 };
 
-export default function PRDetailsBox({ pr, loading, error, isActive, title = '[3] PR Details' }: Props) {
+export default function PRDetailsBox({ pr, loading, error, isActive, title = '[3] PR Details', footer }: Props) {
   const scrollRef = useRef<ScrollViewRef>(null);
   const borderColor = isActive ? 'yellow' : undefined;
 
@@ -50,27 +52,9 @@ export default function PRDetailsBox({ pr, loading, error, isActive, title = '[3
     { isActive }
   );
 
-  // Get terminal width for responsive border
-  const { stdout } = useStdout();
-  const terminalWidth = stdout?.columns ?? 80;
-  // Calculate width: this component takes ~half the terminal (left column)
-  const columnWidth = Math.floor(terminalWidth / 2);
-  const titlePart = `╭ ${displayTitle} `;
-  const dashCount = Math.max(0, columnWidth - titlePart.length - 1);
-  const topBorder = `${titlePart}${'─'.repeat(dashCount)}╮`;
-
   return (
-    <Box flexDirection="column" flexGrow={1}>
-      <Text color={borderColor}>{topBorder}</Text>
-      <Box
-        flexDirection="column"
-        flexGrow={1}
-        flexBasis={0}
-        overflow="hidden"
-        borderStyle="round"
-        borderTop={false}
-        borderColor={borderColor}
-      >
+    <TitledBox title={displayTitle} borderColor={borderColor} footer={footer}>
+      <Box flexDirection="column" flexGrow={1} flexBasis={0} overflow="hidden">
         <ScrollView ref={scrollRef}>
           <Box flexDirection="column" paddingX={1}>
             {loading && (
@@ -202,6 +186,6 @@ export default function PRDetailsBox({ pr, loading, error, isActive, title = '[3
           </Box>
         </ScrollView>
       </Box>
-    </Box>
+    </TitledBox>
   );
 }

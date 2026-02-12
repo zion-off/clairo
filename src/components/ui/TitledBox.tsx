@@ -1,15 +1,23 @@
 import { type ReactNode } from 'react';
-import { Box, Text, useStdout } from 'ink';
+import { Box, Spacer, Text, useStdout } from 'ink';
 
 type Props = {
   title: string;
   borderColor?: string;
   scrollRatio?: number | null;
   fillColor?: string;
+  footer?: ReactNode;
   children: ReactNode;
 };
 
-export default function TitledBox({ title, borderColor, scrollRatio = null, fillColor = '#CC6600', children }: Props) {
+export default function TitledBox({
+  title,
+  borderColor,
+  scrollRatio = null,
+  fillColor = '#CC6600',
+  footer,
+  children
+}: Props) {
   const { stdout } = useStdout();
   const terminalWidth = stdout?.columns ?? 80;
   const columnWidth = Math.floor(terminalWidth / 2);
@@ -43,6 +51,12 @@ export default function TitledBox({ title, borderColor, scrollRatio = null, fill
         borderColor={borderColor}
       >
         {children}
+        {footer && (
+          <>
+            <Spacer />
+            {footer}
+          </>
+        )}
       </Box>
     </Box>
   );

@@ -270,26 +270,31 @@ export default function AllPullRequestsView({ isActive, onModalChange }: Props) 
   };
 
   if (detailPR) {
-    return (
-      <Box flexDirection="column" flexGrow={1}>
-        <PRDetailsBox
-          pr={prDetails}
-          loading={detailsLoading}
-          error={detailsError}
-          isActive={isActive}
-          title="[5] Pull Requests"
-        />
-        {checkoutLoading ? (
-          <Text color="yellow">
-            {' '}
-            <Spinner type="dots" /> Checking out...
-          </Text>
-        ) : checkoutResult ? (
-          <Text color={checkoutResult.success ? 'green' : 'red'}> {checkoutResult.message}</Text>
-        ) : (
-          <Text dimColor> Esc back · j/k scroll · o open · y copy · c checkout</Text>
-        )}
+    const hintFooter = checkoutLoading ? (
+      <Box paddingX={1}>
+        <Text color="yellow">
+          <Spinner type="dots" /> Checking out...
+        </Text>
       </Box>
+    ) : checkoutResult ? (
+      <Box paddingX={1}>
+        <Text color={checkoutResult.success ? 'green' : 'red'}>{checkoutResult.message}</Text>
+      </Box>
+    ) : (
+      <Box paddingX={1}>
+        <Text dimColor>Esc back · j/k scroll · o open · y copy · c checkout</Text>
+      </Box>
+    );
+
+    return (
+      <PRDetailsBox
+        pr={prDetails}
+        loading={detailsLoading}
+        error={detailsError}
+        isActive={isActive}
+        title="[5] Pull Requests"
+        footer={hintFooter}
+      />
     );
   }
 
