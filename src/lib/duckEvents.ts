@@ -9,7 +9,9 @@ export type DuckEvent =
   | 'jira:linked'
   | 'jira:configured'
   | 'jira:assigned'
-  | 'jira:unassigned';
+  | 'jira:unassigned'
+  | 'pr:checkout'
+  | 'pr:filtered';
 
 export type DuckEventPayload = {
   prNumber?: number;

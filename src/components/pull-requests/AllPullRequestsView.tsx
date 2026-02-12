@@ -6,6 +6,7 @@ import Spinner from 'ink-spinner';
 import { useGitRepo } from '../../hooks/github/index';
 import { useListNavigation } from '../../hooks/index';
 import { copyToClipboard } from '../../lib/clipboard';
+import { duckEvents } from '../../lib/duckEvents';
 import {
   CHECK_COLORS,
   CHECK_ICONS,
@@ -153,6 +154,7 @@ export default function AllPullRequestsView({ isActive, onModalChange }: Props) 
             setSearchText(newSearch);
             setLimit(30);
             doFetch(stateFilter, newSearch);
+            duckEvents.emit('pr:filtered');
           }
           return;
         }
@@ -181,6 +183,7 @@ export default function AllPullRequestsView({ isActive, onModalChange }: Props) 
         setStateFilter(newState);
         setLimit(30);
         doFetch(newState, searchText);
+        duckEvents.emit('pr:filtered');
         return;
       }
       if (input === 'x') {
@@ -231,6 +234,7 @@ export default function AllPullRequestsView({ isActive, onModalChange }: Props) 
           setCheckoutLoading(false);
           if (result.success) {
             setCheckoutResult({ success: true, message: `Checked out #${detailPR.number}` });
+            duckEvents.emit('pr:checkout', { prNumber: detailPR.number, prTitle: detailPR.title });
             repo.refreshBranch();
           } else {
             setCheckoutResult({ success: false, message: result.error });

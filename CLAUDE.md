@@ -78,6 +78,10 @@ useInput((input, key) => { ... }, { isActive: isFocused && !showModal });
 3. Config helpers in `lib/newservice/config.ts`
 4. Barrel export in `lib/newservice/index.ts`
 
+## Duck Events
+
+When adding new user-facing actions (transitions, assignments, checkouts, filtering, etc.), emit an appropriate duck event via `duckEvents.emit()` from `lib/duckEvents.ts`. Add the event type to the `DuckEvent` union and add corresponding reaction messages in `constants/duck.ts`.
+
 ## Gotchas
 
 - `gh pr view` without `--repo` auto-detects the correct upstream (handles forks)
