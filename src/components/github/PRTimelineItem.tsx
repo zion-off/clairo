@@ -8,7 +8,9 @@ export default function PRTimelineItem({ event }: { event: TimelineEvent }) {
       return (
         <Box flexDirection="column" marginTop={1}>
           <Box>
-            <Text color="blue">◆ {event.author}</Text>
+            <Text color="blue">
+              {'\uf075'} {event.author}
+            </Text>
             <Text dimColor> commented {timeAgo(event.createdAt)}</Text>
           </Box>
           {event.body && (
@@ -30,12 +32,12 @@ export default function PRTimelineItem({ event }: { event: TimelineEvent }) {
           : 'yellow';
       const icon =
         event.state === 'APPROVED'
-          ? '✓'
+          ? '\uf00c'
           : event.state === 'CHANGES_REQUESTED'
-          ? '✗'
+          ? '\uf00d'
           : event.state === 'COMMENTED'
-          ? '◆'
-          : '○';
+          ? '\uf075'
+          : '\uf10c';
       const label =
         event.state === 'APPROVED'
           ? 'approved'
@@ -70,7 +72,7 @@ export default function PRTimelineItem({ event }: { event: TimelineEvent }) {
       return (
         <Box flexDirection="column" marginTop={1}>
           <Box>
-            <Text color="yellow">⊙ </Text>
+            <Text color="yellow">{'\ue729'} </Text>
             <Text>
               {event.commits.length} commit{event.commits.length !== 1 ? 's' : ''} pushed
             </Text>

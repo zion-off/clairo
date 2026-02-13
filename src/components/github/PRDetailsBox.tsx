@@ -90,12 +90,12 @@ export default function PRDetailsBox({ pr, loading, error, isActive, title = '[3
                   : 'yellow';
               const icon =
                 review.state === 'APPROVED'
-                  ? '✓'
+                  ? '\uf00c'
                   : review.state === 'CHANGES_REQUESTED'
-                  ? '✗'
+                  ? '\uf00d'
                   : review.state === 'COMMENTED'
-                  ? '◆'
-                  : '○';
+                  ? '\uf075'
+                  : '\uf10c';
               return (
                 <Text key={idx} color={color}>
                   {'  '}

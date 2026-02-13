@@ -86,11 +86,11 @@ export function resolveReviewDisplay(reviewDecision: string | null): { text: str
 
 export function resolveMergeDisplay(pr: PRDetails | null): { text: string; color: string } {
   if (!pr) return { text: 'Unknown', color: 'yellow' };
-  if (pr.state === 'MERGED') return { text: 'Merged', color: 'magenta' };
-  if (pr.state === 'CLOSED') return { text: 'Closed', color: 'red' };
-  if (pr.isDraft) return { text: 'Draft', color: 'yellow' };
-  if (pr.mergeable === 'MERGEABLE') return { text: 'Open', color: 'green' };
-  if (pr.mergeable === 'CONFLICTING') return { text: 'Conflicts', color: 'red' };
+  if (pr.state === 'MERGED') return { text: '\ue727 Merged', color: 'magenta' };
+  if (pr.state === 'CLOSED') return { text: '\ue726 Closed', color: 'red' };
+  if (pr.isDraft) return { text: '\ue726 Draft', color: 'yellow' };
+  if (pr.mergeable === 'MERGEABLE') return { text: '\ue726 Open', color: 'green' };
+  if (pr.mergeable === 'CONFLICTING') return { text: '\ue726 Conflicts', color: 'red' };
   return { text: 'Unknown', color: 'yellow' };
 }
 

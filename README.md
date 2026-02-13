@@ -33,6 +33,7 @@ an opinionated dashboard tui for github PRs, jira tickets, and daily logs.
 
 - Node.js 18+
 - [GitHub CLI](https://cli.github.com/) (`gh`) installed and authenticated
+- A [Nerd Font](https://www.nerdfonts.com/) is highly recommended for proper icon rendering
 
 ## usage
 
