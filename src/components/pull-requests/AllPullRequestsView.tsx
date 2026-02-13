@@ -15,7 +15,6 @@ import {
   PRListItem,
   getPRDetails,
   resolveCheckStatus,
-  resolveMergeDisplay,
   resolveReviewDisplay,
   timeAgo
 } from '../../lib/github/index';
@@ -254,19 +253,15 @@ export default function AllPullRequestsView({ isActive, onModalChange }: Props) 
   const scrollRatio = isActive && prs.length > 1 ? highlightedIndex / (prs.length - 1) : null;
 
   const stateColor = (pr: PRListItem) => {
-    const display = resolveMergeDisplay({
-      state: pr.state,
-      isDraft: pr.isDraft,
-      mergeable: 'UNKNOWN'
-    } as PRDetails);
-    return display.color;
+    if (pr.state === 'MERGED') return 'magenta';
+    if (pr.state === 'CLOSED') return 'red';
+    if (pr.isDraft) return 'gray';
+    return 'green';
   };
 
-  const stateLabel = (pr: PRListItem) => {
-    if (pr.isDraft) return 'Draft';
-    if (pr.state === 'MERGED') return 'Merged';
-    if (pr.state === 'CLOSED') return 'Closed';
-    return 'Open';
+  const stateIcon = (pr: PRListItem) => {
+    if (pr.state === 'MERGED') return '\ue727';
+    return '\ue726';
   };
 
   if (detailPR) {
@@ -341,15 +336,14 @@ export default function AllPullRequestsView({ isActive, onModalChange }: Props) 
                   <Box key={pr.number} flexDirection="column">
                     <Box>
                       <Text color={isHighlighted ? 'yellow' : undefined}>{cursor} </Text>
-                      <Text>#{pr.number}</Text>
-                      <Text> {pr.title} </Text>
-                      {(pr.state !== 'OPEN' || pr.isDraft) && <Text color={stateColor(pr)}>[{stateLabel(pr)}]</Text>}
+                      <Text color={stateColor(pr)}>{stateIcon(pr)} </Text>
+                      <Text>{pr.title}</Text>
                     </Box>
                     <Box>
                       <Text> </Text>
                       <Text dimColor>
                         {' '}
-                        {pr.author.login} · {timeAgo(pr.createdAt)}
+                        #{pr.number} · {pr.author.login} · {timeAgo(pr.createdAt)}
                       </Text>
                       {pr.reviewDecision && <Text dimColor> · {review.text}</Text>}
                       {overallCheck && <Text color={CHECK_COLORS[overallCheck]}> {CHECK_ICONS[overallCheck]}</Text>}
