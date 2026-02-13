@@ -1,5 +1,5 @@
 import open from 'open';
-import React, { useMemo, useRef } from 'react';
+import React, { useRef } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { ScrollView, ScrollViewRef } from 'ink-scroll-view';
 import Spinner from 'ink-spinner';
@@ -9,7 +9,6 @@ import {
   CHECK_SORT_ORDER,
   PRDetails,
   StatusCheck,
-  buildTimeline,
   resolveCheckStatus,
   resolveMergeDisplay,
   resolveReviewDisplay,
@@ -19,7 +18,6 @@ import Badge from '../ui/Badge';
 import Divider from '../ui/Divider';
 import Markdown from '../ui/Markdown';
 import TitledBox from '../ui/TitledBox';
-import PRTimelineItem from './PRTimelineItem';
 
 type Props = {
   pr: PRDetails | null;
@@ -38,7 +36,6 @@ export default function PRDetailsBox({ pr, loading, error, isActive, title = '[3
 
   const reviewDisplay = resolveReviewDisplay(pr?.reviewDecision ?? null);
   const mergeDisplay = resolveMergeDisplay(pr);
-  const timeline = useMemo(() => (pr ? buildTimeline(pr) : []), [pr]);
 
   useInput(
     (input, key) => {
@@ -155,20 +152,6 @@ export default function PRDetailsBox({ pr, loading, error, isActive, title = '[3
           <Box flexDirection="column">
             <Text dimColor>Description:</Text>
             <Markdown>{pr.body}</Markdown>
-          </Box>
-        )
-      });
-    }
-
-    if (timeline.length > 0) {
-      sections.push({
-        key: 'timeline',
-        content: (
-          <Box flexDirection="column">
-            <Text dimColor>Activity:</Text>
-            {timeline.map((event, idx) => (
-              <PRTimelineItem key={idx} event={event} />
-            ))}
           </Box>
         )
       });
