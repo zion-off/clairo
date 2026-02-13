@@ -111,12 +111,86 @@ export type PRDetails = {
   deletions: number;
   labels: Array<{ name: string }>;
   reviewDecision: 'APPROVED' | 'CHANGES_REQUESTED' | 'REVIEW_REQUIRED' | null;
-  commits: Array<{ oid: string; messageHeadline: string }>;
+  commits: Array<{ oid: string; messageHeadline: string; committedDate: string; authors: Array<{ login: string }> }>;
   assignees: Array<{ login: string }>;
   reviewRequests: Array<{ login?: string; name?: string; slug?: string }>;
-  reviews: Array<{ author: { login: string }; state: string }>;
+  reviews: Array<{ author: { login: string }; state: string; body: string; submittedAt: string }>;
+  comments: Array<{ author: { login: string }; body: string; createdAt: string }>;
   statusCheckRollup: StatusCheck[] | null;
 };
+
+export type TimelineEvent =
+  | { type: 'comment'; author: string; body: string; createdAt: string }
+  | { type: 'review'; author: string; state: string; body: string; createdAt: string }
+  | {
+      type: 'commit-group';
+      commits: Array<{ oid: string; messageHeadline: string; author: string }>;
+      createdAt: string;
+    };
+
+export function buildTimeline(pr: PRDetails): TimelineEvent[] {
+  type SortableItem =
+    | { kind: 'comment' | 'review'; event: TimelineEvent; date: number }
+    | { kind: 'commit'; oid: string; messageHeadline: string; author: string; date: number };
+
+  const items: SortableItem[] = [];
+
+  for (const c of pr.comments ?? []) {
+    items.push({
+      kind: 'comment',
+      event: { type: 'comment', author: c.author.login, body: c.body, createdAt: c.createdAt },
+      date: new Date(c.createdAt).getTime()
+    });
+  }
+
+  for (const r of pr.reviews ?? []) {
+    // Skip COMMENTED reviews with no body (inline-only reviews)
+    if (r.state === 'COMMENTED' && !r.body) continue;
+    items.push({
+      kind: 'review',
+      event: { type: 'review', author: r.author.login, state: r.state, body: r.body ?? '', createdAt: r.submittedAt },
+      date: new Date(r.submittedAt).getTime()
+    });
+  }
+
+  for (const c of pr.commits ?? []) {
+    items.push({
+      kind: 'commit',
+      oid: c.oid,
+      messageHeadline: c.messageHeadline,
+      author: c.authors?.[0]?.login ?? pr.author.login,
+      date: new Date(c.committedDate).getTime()
+    });
+  }
+
+  items.sort((a, b) => a.date - b.date);
+
+  // Walk sorted items, grouping consecutive commits
+  const timeline: TimelineEvent[] = [];
+  let commitGroup: Array<{ oid: string; messageHeadline: string; author: string; date: number }> = [];
+
+  function flushCommits() {
+    if (commitGroup.length === 0) return;
+    timeline.push({
+      type: 'commit-group',
+      commits: commitGroup.map((c) => ({ oid: c.oid, messageHeadline: c.messageHeadline, author: c.author })),
+      createdAt: new Date(commitGroup[commitGroup.length - 1]!.date).toISOString()
+    });
+    commitGroup = [];
+  }
+
+  for (const item of items) {
+    if (item.kind === 'commit') {
+      commitGroup.push(item);
+    } else {
+      flushCommits();
+      timeline.push(item.event);
+    }
+  }
+  flushCommits();
+
+  return timeline;
+}
 
 /**
  * Check if gh CLI is installed
@@ -246,6 +320,7 @@ export async function getPRDetails(prNumber: number, repo: string): Promise<GitH
       'assignees',
       'reviewRequests',
       'reviews',
+      'comments',
       'statusCheckRollup'
     ].join(',');
 

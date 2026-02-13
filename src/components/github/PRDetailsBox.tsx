@@ -1,5 +1,5 @@
 import open from 'open';
-import { useRef } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { ScrollView, ScrollViewRef } from 'ink-scroll-view';
 import Spinner from 'ink-spinner';
@@ -9,6 +9,7 @@ import {
   CHECK_SORT_ORDER,
   PRDetails,
   StatusCheck,
+  buildTimeline,
   resolveCheckStatus,
   resolveMergeDisplay,
   resolveReviewDisplay,
@@ -18,6 +19,7 @@ import Badge from '../ui/Badge';
 import Divider from '../ui/Divider';
 import Markdown from '../ui/Markdown';
 import TitledBox from '../ui/TitledBox';
+import PRTimelineItem from './PRTimelineItem';
 
 type Props = {
   pr: PRDetails | null;
@@ -36,6 +38,7 @@ export default function PRDetailsBox({ pr, loading, error, isActive, title = '[3
 
   const reviewDisplay = resolveReviewDisplay(pr?.reviewDecision ?? null);
   const mergeDisplay = resolveMergeDisplay(pr);
+  const timeline = useMemo(() => (pr ? buildTimeline(pr) : []), [pr]);
 
   useInput(
     (input, key) => {
@@ -51,6 +54,126 @@ export default function PRDetailsBox({ pr, loading, error, isActive, title = '[3
     },
     { isActive }
   );
+
+  // Build sections array — dividers only render between non-empty sections
+  const sections: Array<{ key: string; content: React.ReactNode }> = [];
+  if (pr) {
+    if ((pr.assignees?.length ?? 0) > 0) {
+      sections.push({
+        key: 'assignees',
+        content: (
+          <Box>
+            <Text dimColor>Assignees: </Text>
+            <Text>{pr.assignees.map((a) => a.login).join(', ')}</Text>
+          </Box>
+        )
+      });
+    }
+
+    if ((pr.reviews?.length ?? 0) > 0 || (pr.reviewRequests?.length ?? 0) > 0) {
+      sections.push({
+        key: 'reviews',
+        content: (
+          <Box flexDirection="column">
+            <Box>
+              <Text dimColor>Reviews: </Text>
+              <Text color={reviewDisplay.color}>{reviewDisplay.text}</Text>
+            </Box>
+            {pr.reviews?.map((review, idx) => {
+              const color =
+                review.state === 'APPROVED'
+                  ? 'green'
+                  : review.state === 'CHANGES_REQUESTED'
+                  ? 'red'
+                  : review.state === 'COMMENTED'
+                  ? 'blue'
+                  : 'yellow';
+              const icon =
+                review.state === 'APPROVED'
+                  ? '✓'
+                  : review.state === 'CHANGES_REQUESTED'
+                  ? '✗'
+                  : review.state === 'COMMENTED'
+                  ? '◆'
+                  : '○';
+              return (
+                <Text key={idx} color={color}>
+                  {'  '}
+                  {icon} {review.author.login}
+                </Text>
+              );
+            })}
+            {pr.reviewRequests?.map((r, idx) => (
+              <Text key={`pending-${idx}`} color="yellow">
+                {'  '}○ {r.login ?? r.name ?? r.slug ?? 'Team'} <Text dimColor>(pending)</Text>
+              </Text>
+            ))}
+          </Box>
+        )
+      });
+    }
+
+    if ((pr.statusCheckRollup?.length ?? 0) > 0) {
+      sections.push({
+        key: 'checks',
+        content: (
+          <Box flexDirection="column">
+            <Text dimColor>Checks:</Text>
+            {Array.from(
+              pr.statusCheckRollup
+                ?.reduce((acc, check) => {
+                  const key = check.name ?? check.context ?? '';
+                  const existing = acc.get(key);
+                  if (!existing || (check.startedAt ?? '') > (existing.startedAt ?? '')) {
+                    acc.set(key, check);
+                  }
+                  return acc;
+                }, new Map<string, StatusCheck>())
+                .values() ?? []
+            )
+              .sort((a, b) => CHECK_SORT_ORDER[resolveCheckStatus(a)] - CHECK_SORT_ORDER[resolveCheckStatus(b)])
+              .map((check, idx) => {
+                const jobName = check.name ?? check.context;
+                const displayName = check.workflowName ? `${check.workflowName} / ${jobName}` : jobName;
+                const status = resolveCheckStatus(check);
+                return (
+                  <Text key={idx} color={CHECK_COLORS[status]}>
+                    {'  '}
+                    {CHECK_ICONS[status]} {displayName}
+                  </Text>
+                );
+              })}
+          </Box>
+        )
+      });
+    }
+
+    if (pr.body) {
+      sections.push({
+        key: 'description',
+        content: (
+          <Box flexDirection="column">
+            <Text dimColor>Description:</Text>
+            <Markdown>{pr.body}</Markdown>
+          </Box>
+        )
+      });
+    }
+
+    if (timeline.length > 0) {
+      sections.push({
+        key: 'timeline',
+        content: (
+          <Box flexDirection="column">
+            <Text dimColor>Activity:</Text>
+            {timeline.map((event, idx) => (
+              <PRTimelineItem key={idx} event={event} />
+            ))}
+          </Box>
+        )
+      });
+    }
+  }
 
   return (
     <TitledBox title={displayTitle} borderColor={borderColor} footer={footer}>
@@ -93,94 +216,14 @@ export default function PRDetailsBox({ pr, loading, error, isActive, title = '[3
                   </Box>
                 )}
 
-                <Box marginTop={1}>
-                  <Divider />
-                </Box>
-
-                {(pr.assignees?.length ?? 0) > 0 && (
-                  <Box marginTop={1}>
-                    <Text dimColor>Assignees: </Text>
-                    <Text>{pr.assignees.map((a) => a.login).join(', ')}</Text>
-                  </Box>
-                )}
-
-                {((pr.reviews?.length ?? 0) > 0 || (pr.reviewRequests?.length ?? 0) > 0) && (
-                  <Box marginTop={1} flexDirection="column">
-                    <Box>
-                      <Text dimColor>Reviews: </Text>
-                      <Text color={reviewDisplay.color}>{reviewDisplay.text}</Text>
+                {sections.map((section) => (
+                  <React.Fragment key={section.key}>
+                    <Box marginTop={1}>
+                      <Divider />
                     </Box>
-                    {pr.reviews?.map((review, idx) => {
-                      const color =
-                        review.state === 'APPROVED'
-                          ? 'green'
-                          : review.state === 'CHANGES_REQUESTED'
-                          ? 'red'
-                          : review.state === 'COMMENTED'
-                          ? 'blue'
-                          : 'yellow';
-                      const icon =
-                        review.state === 'APPROVED'
-                          ? '✓'
-                          : review.state === 'CHANGES_REQUESTED'
-                          ? '✗'
-                          : review.state === 'COMMENTED'
-                          ? '💬'
-                          : '○';
-                      return (
-                        <Text key={idx} color={color}>
-                          {'  '}
-                          {icon} {review.author.login}
-                        </Text>
-                      );
-                    })}
-                    {pr.reviewRequests?.map((r, idx) => (
-                      <Text key={`pending-${idx}`} color="yellow">
-                        {'  '}○ {r.login ?? r.name ?? r.slug ?? 'Team'} <Text dimColor>(pending)</Text>
-                      </Text>
-                    ))}
-                  </Box>
-                )}
-
-                {(pr.statusCheckRollup?.length ?? 0) > 0 && (
-                  <Box marginTop={1} flexDirection="column">
-                    <Divider />
-                    <Text dimColor>Checks:</Text>
-                    {Array.from(
-                      pr.statusCheckRollup
-                        ?.reduce((acc, check) => {
-                          const key = check.name ?? check.context ?? '';
-                          const existing = acc.get(key);
-                          // Keep the most recent run (by startedAt) for each check name
-                          if (!existing || (check.startedAt ?? '') > (existing.startedAt ?? '')) {
-                            acc.set(key, check);
-                          }
-                          return acc;
-                        }, new Map<string, StatusCheck>())
-                        .values() ?? []
-                    )
-                      .sort((a, b) => CHECK_SORT_ORDER[resolveCheckStatus(a)] - CHECK_SORT_ORDER[resolveCheckStatus(b)])
-                      .map((check, idx) => {
-                        const jobName = check.name ?? check.context;
-                        const displayName = check.workflowName ? `${check.workflowName} / ${jobName}` : jobName;
-                        const status = resolveCheckStatus(check);
-                        return (
-                          <Text key={idx} color={CHECK_COLORS[status]}>
-                            {'  '}
-                            {CHECK_ICONS[status]} {displayName}
-                          </Text>
-                        );
-                      })}
-                  </Box>
-                )}
-
-                {pr.body && (
-                  <Box marginTop={1} flexDirection="column">
-                    <Divider />
-                    <Text dimColor>Description:</Text>
-                    <Markdown>{pr.body}</Markdown>
-                  </Box>
-                )}
+                    {section.content}
+                  </React.Fragment>
+                ))}
               </>
             )}
           </Box>
