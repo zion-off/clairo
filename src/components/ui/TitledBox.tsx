@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import { Box, Spacer, Text, useStdout } from 'ink';
+import { Box, Text, useStdout } from 'ink';
 
 type Props = {
   title: string;
@@ -50,12 +50,15 @@ export default function TitledBox({
         borderTop={false}
         borderColor={borderColor}
       >
-        {children}
-        {footer && (
+        {footer ? (
           <>
-            <Spacer />
+            <Box flexDirection="column" flexGrow={1} flexBasis={0} overflow="hidden">
+              {children}
+            </Box>
             {footer}
           </>
+        ) : (
+          children
         )}
       </Box>
     </Box>
